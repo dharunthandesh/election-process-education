@@ -13,8 +13,130 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap"
     rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css">
   <style>
+    :root {
+      --saffron: #FF6B00;
+      --saffron-lt: rgba(255, 107, 0, 0.12);
+      --saffron-glow: 0 0 32px rgba(255, 107, 0, 0.2);
+      --white: #FDFAF6;
+      --green: #138808;
+      --green-lt: rgba(19, 136, 8, 0.12);
+      --navy: #000080;
+      --bg: #0D0F14;
+      --bg-1: #12151C;
+      --bg-2: #171B24;
+      --bg-3: #1C2130;
+      --bg-4: #212740;
+      --border: #252B3B;
+      --border-hi: #3A4460;
+      --text: #EEE8DF;
+      --text-2: #9A8E80;
+      --text-3: #5A5248;
+      --gold: #F0A500;
+      --gold-lt: rgba(240, 165, 0, 0.12);
+      --r: 10px;
+      --r-sm: 6px;
+      --font-h: 'Playfair Display', serif;
+      --font-b: 'DM Sans', sans-serif;
+      --font-m: 'DM Mono', monospace;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-b);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Skip to content for accessibility */
+    .skip-link {
+      position: absolute;
+      top: -40px;
+      left: 1rem;
+      background: var(--saffron);
+      color: #fff;
+      padding: 0.5rem 1rem;
+      border-radius: var(--r-sm);
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: top 0.2s;
+      z-index: 999;
+      text-decoration: none;
+    }
+
+    .skip-link:focus {
+      top: 0.5rem;
+    }
+
+    /* Ashoka Chakra inspired bg pattern */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(circle at 20% 50%, rgba(255, 107, 0, 0.04) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(19, 136, 8, 0.04) 0%, transparent 50%),
+        radial-gradient(circle at 50% 80%, rgba(0, 0, 128, 0.03) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(13, 15, 20, 0.94);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0 1.5rem;
+      height: 64px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      text-decoration: none;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--saffron), var(--gold));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: var(--saffron-glow);
+    }
+
+    .logo-text {
+      font-family: var(--font-h);
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+
     .logo-text span {
       color: var(--saffron);
     }
@@ -1747,7 +1869,7 @@
     <!-- QUIZ ─────────────────────────────────────────────────── -->
     <section class="panel" id="panel-quiz" role="tabpanel" aria-label="Election quiz">
       <h2 class="section-title">Test Your Election Knowledge</h2>
-      <div class="quiz-container" id="quiz-container" role="main" aria-live="polite">
+      <div class="quiz-container" id="quiz-container" aria-live="polite">
         <div class="loading-state">Loading quiz…</div>
       </div>
     </section>
@@ -1960,14 +2082,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics-compat.js"></script>
-  <script>
-    window.onerror = function(msg, url, line, col, error) {
-      const errDiv = document.createElement('div');
-      errDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;background:red;color:white;z-index:9999;padding:10px;font-size:12px;';
-      errDiv.textContent = 'Error: ' + msg + ' at line ' + line;
-      document.body.appendChild(errDiv);
-    };
-  </script>
+
 
   <script>
     /* ── Utilities ──────────────────────────────────────────── */
@@ -2007,10 +2122,7 @@
         btn.classList.add('active'); btn.setAttribute('aria-selected', 'true');
         document.getElementById('panel-' + target).classList.add('active');
 
-        if (target === 'quiz' && !quizLoaded) {
-          console.log('Navigating to quiz tab - initializing...');
-          initQuiz();
-        }
+        if (target === 'quiz' && !quizLoaded) initQuiz();
         if (target === 'parliament' && !parliamentLoaded) loadParliament();
         if (target === 'states' && !statesLoaded) loadStates();
         if (target === 'president' && !presidentLoaded) loadPresident();
@@ -2231,7 +2343,7 @@
         renderQuestion();
         return;
       }
-      console.log('Quiz initialized - Version 4 (Event Delegation Fix)');
+
       try {
         const res = await fetch('/api/quiz');
         const data = await res.json();
@@ -2239,7 +2351,7 @@
         selectedAnswers = new Array(questions.length).fill(-1);
         quizLoaded = true;
         renderQuestion();
-        console.log('Quiz loaded with', questions.length, 'questions');
+
       } catch (e) {
         console.error('Quiz load error:', e);
         document.getElementById('quiz-container').innerHTML = '<div class="error-state">Failed to load quiz. Please refresh the page.</div>';
@@ -2282,22 +2394,17 @@
         </div>
       `;
 
-      // Attach click handlers using event delegation (more reliable than inline onclick)
-      setTimeout(() => {
-        const optionsContainer = document.getElementById('quiz-options');
-        if (optionsContainer) {
-          optionsContainer.addEventListener('click', handleOptionClick, { once: false });
-        }
-
-        const nextBtn = document.getElementById('next-btn');
-        if (nextBtn) {
-          nextBtn.addEventListener('click', () => {
-            if (selectedAnswers[currentQ] !== -1) {
-              nextQuestion();
-            }
-          });
-        }
-      }, 10);
+      // Attach click handlers using event delegation
+      const optionsContainer = document.getElementById('quiz-options');
+      if (optionsContainer) {
+        optionsContainer.addEventListener('click', handleOptionClick);
+      }
+      const nextBtn = document.getElementById('next-btn');
+      if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+          if (selectedAnswers[currentQ] !== -1) nextQuestion();
+        });
+      }
     }
 
     function handleOptionClick(e) {
@@ -2307,21 +2414,18 @@
       const index = parseInt(button.dataset.index, 10);
       if (isNaN(index)) return;
 
-      console.log('Option clicked:', index); // Debug log
+
       selectAnswer(index);
     }
 
     function selectAnswer(idx) {
       selectedAnswers[currentQ] = idx;
-      console.log(`Selected answer ${idx} for question ${currentQ}`);
+
       renderQuestion();
     }
 
     function nextQuestion() {
-      if (selectedAnswers[currentQ] === -1) {
-        console.log('No answer selected yet');
-        return;
-      }
+      if (selectedAnswers[currentQ] === -1) return;
       currentQ++;
       if (currentQ >= questions.length) {
         showResults();
