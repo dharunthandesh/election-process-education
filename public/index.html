@@ -2084,6 +2084,13 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics-compat.js"></script>
 
   <script>
+    window.onerror = function(msg, url, line, col, error) {
+      const errDiv = document.createElement('div');
+      errDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;background:red;color:white;z-index:9999;padding:10px;font-size:12px;';
+      errDiv.textContent = 'Error: ' + msg + ' at line ' + line;
+      document.body.appendChild(errDiv);
+    };
+
     /* ── Utilities ──────────────────────────────────────────── */
     /**
      * Escapes HTML special characters to prevent XSS.
@@ -2121,7 +2128,10 @@
         btn.classList.add('active'); btn.setAttribute('aria-selected', 'true');
         document.getElementById('panel-' + target).classList.add('active');
 
-        if (target === 'quiz' && !quizLoaded) initQuiz();
+        if (target === 'quiz' && !quizLoaded) {
+          console.log('Navigating to quiz tab - initializing...');
+          initQuiz();
+        }
         if (target === 'parliament' && !parliamentLoaded) loadParliament();
         if (target === 'states' && !statesLoaded) loadStates();
         if (target === 'president' && !presidentLoaded) loadPresident();
@@ -2337,7 +2347,12 @@
     const SESSION_ID = Math.random().toString(36).slice(2);
 
     async function initQuiz() {
-      if (quizLoaded) return;
+      if (quizLoaded) {
+        console.log('Quiz already loaded, just rendering current state');
+        renderQuestion();
+        return;
+      }
+      console.log('Quiz initialized - Version 4 (Event Delegation Fix)');
       try {
         const res = await fetch('/api/quiz');
         const data = await res.json();
@@ -2345,8 +2360,10 @@
         selectedAnswers = new Array(questions.length).fill(-1);
         quizLoaded = true;
         renderQuestion();
+        console.log('Quiz loaded with', questions.length, 'questions');
       } catch (e) {
-        document.getElementById('quiz-container').innerHTML = '<div class="error-state">Failed to load quiz. Please refresh.</div>';
+        console.error('Quiz load error:', e);
+        document.getElementById('quiz-container').innerHTML = '<div class="error-state">Failed to load quiz. Please refresh the page.</div>';
       }
     }
 
@@ -2364,10 +2381,10 @@
           <span class="progress-text">${currentQ + 1} / ${questions.length}</span>
         </div>
         <div class="quiz-question" id="q-text">${escHtml(q.q)}</div>
-        <div class="quiz-options" role="group" aria-labelledby="q-text">
+        <div class="quiz-options" id="quiz-options" role="group" aria-labelledby="q-text">
           ${q.options.map((opt, i) => `
             <button class="quiz-option${sel === i ? ' selected' : sel !== -1 ? ' dimmed' : ''}"
-              data-index="${i}" onclick="selectAnswer(${i})"
+              data-index="${i}"
               aria-label="Option ${i + 1}: ${escHtml(opt)}"
               aria-pressed="${sel === i}">
               ${String.fromCharCode(65 + i)}. ${escHtml(opt)}
@@ -2378,22 +2395,54 @@
           <span style="font-family:var(--font-m);font-size:0.75rem;color:var(--text-3);">
             ${sel !== -1 ? '✓ Answer saved — click Next' : 'Select an answer'}
           </span>
-          <button class="btn btn-primary" id="next-btn" onclick="nextQuestion()"
+          <button class="btn btn-primary" id="next-btn"
             ${sel === -1 ? 'disabled' : ''}
             aria-label="${currentQ === questions.length - 1 ? 'See results' : 'Next question'}">
             ${currentQ === questions.length - 1 ? 'See Results →' : 'Next →'}
           </button>
         </div>
       `;
+
+      // Attach click handlers using event delegation (more reliable than inline onclick)
+      setTimeout(() => {
+        const optionsContainer = document.getElementById('quiz-options');
+        if (optionsContainer) {
+          optionsContainer.addEventListener('click', handleOptionClick, { once: false });
+        }
+
+        const nextBtn = document.getElementById('next-btn');
+        if (nextBtn) {
+          nextBtn.addEventListener('click', () => {
+            if (selectedAnswers[currentQ] !== -1) {
+              nextQuestion();
+            }
+          });
+        }
+      }, 10);
+    }
+
+    function handleOptionClick(e) {
+      const button = e.target.closest('.quiz-option');
+      if (!button) return;
+
+      const index = parseInt(button.dataset.index, 10);
+      if (isNaN(index)) return;
+
+      console.log('Option clicked:', index); // Debug log
+      selectAnswer(index);
     }
 
     function selectAnswer(idx) {
       selectedAnswers[currentQ] = idx;
+      console.log(`Selected answer ${idx} for question ${currentQ}`);
       renderQuestion();
     }
 
     function nextQuestion() {
-      if (selectedAnswers[currentQ] === -1) return;
+      if (selectedAnswers[currentQ] === -1) {
+        console.log('No answer selected yet');
+        return;
+      }
       currentQ++;
       if (currentQ >= questions.length) {
         showResults();
