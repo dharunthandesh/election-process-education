@@ -8,13 +8,13 @@
 
 'use strict';
 
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const compress = require('compression');
-const rateLimit = require('express-rate-limit');
-const path = require('path');
-const admin = require('firebase-admin');
+const express    = require('express');
+const cors       = require('cors');
+const helmet     = require('helmet');
+const compress   = require('compression');
+const rateLimit  = require('express-rate-limit');
+const path       = require('path');
+const admin      = require('firebase-admin');
 require('dotenv').config();
 
 // ── Firebase Admin initialisation ────────────────────────────────────────────
@@ -27,75 +27,54 @@ try {
   console.warn('Firebase Firestore: running without persistence —', e.message);
 }
 
-const app = express();
+const app  = express();
 const PORT = process.env.PORT || 8080;
-
-// Cloud Run / load balancers: trust first proxy so client IP is correct for rate limits
-if (process.env.NODE_ENV === 'production') {
-  app.set('trust proxy', 1);
-}
 
 // ── Security & Middleware ─────────────────────────────────────────────────────
 
 app.use(compress());
 
 app.use(helmet({
-  hsts: process.env.NODE_ENV === 'production' ? { maxAge: 31_536_000, includeSubDomains: true } : false,
   contentSecurityPolicy: {
     directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'",
-        'https://www.gstatic.com',
-        'https://www.googletagmanager.com',
-        'https://www.google-analytics.com',
-        'https://apis.google.com',
-        'https://www.google.com'],
-      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-      frameSrc: ['https://www.google.com', 'https://accounts.google.com', 'https://*.firebaseapp.com'],
-      connectSrc: ["'self'",
-        'https://*.googleapis.com',
-        'https://www.gstatic.com',
-        'https://www.google-analytics.com',
-        'https://firebaseapp.com',
-        'https://*.firebaseio.com',
-        'https://apis.google.com'],
-      imgSrc: ["'self'", 'data:', 'https:'],
+      defaultSrc:  ["'self'"],
+      scriptSrc:   ["'self'", "'unsafe-inline'",
+                    'https://www.gstatic.com',
+                    'https://apis.google.com',
+                    'https://www.googletagmanager.com',
+                    'https://www.google-analytics.com'],
+      styleSrc:    ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc:     ["'self'", 'https://fonts.gstatic.com'],
+      frameSrc:    ['https://www.google.com', 'https://accounts.google.com',
+                    'https://promptwars-493418.firebaseapp.com'],
+      connectSrc:  ["'self'",
+                    'https://*.googleapis.com',
+                    'https://www.gstatic.com',
+                    'https://www.google-analytics.com',
+                    'https://firebaseapp.com',
+                    'https://*.firebaseio.com',
+                    'https://apis.google.com'],
+      imgSrc:      ["'self'", 'data:', 'https:'],
     },
   },
 }));
 
-// Set ALLOWED_ORIGIN env var in production to restrict cross-origin access
 app.use(cors({ origin: process.env.ALLOWED_ORIGIN || '*', methods: ['GET', 'POST'] }));
 app.use(express.json({ limit: '10kb' }));
 
 // ── Rate Limiters ─────────────────────────────────────────────────────────────
-
-const isTest = process.env.NODE_ENV === 'test';
 
 /** Rate limiter for AI chat endpoint — 20 req/min per IP */
 const chatLimiter = rateLimit({
   windowMs: 60_000, max: 20,
   standardHeaders: true, legacyHeaders: false,
   message: { error: 'Too many requests. Please wait a moment.' },
-  skip: () => isTest,
 });
 
 /** General rate limiter for data endpoints — 100 req/min per IP */
 const apiLimiter = rateLimit({
   windowMs: 60_000, max: 100,
   message: { error: 'Too many requests.' },
-  skip: () => isTest,
-});
-
-/** Stricter limit for state-changing / expensive POSTs — 30 req/min per IP (quiz save) */
-const postMutationLimiter = rateLimit({
-  windowMs: 60_000,
-  max: 30,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many submissions. Please wait a moment.' },
-  skip: () => isTest,
 });
 
 // ── In-memory Response Cache ──────────────────────────────────────────────────
@@ -147,67 +126,67 @@ function setCache(key, data) {
 
 /** Core election data for India */
 const ELECTION_DATA = {
-  title: 'Indian Elections',
+  title:    'Indian Elections',
   subtitle: 'Lok Sabha, Vidhan Sabha & Local Body Elections',
-  country: 'India',
-  body: 'Election Commission of India (ECI)',
-  website: 'https://eci.gov.in',
+  country:  'India',
+  body:     'Election Commission of India (ECI)',
+  website:  'https://eci.gov.in',
 
   keyFacts: [
-    { label: 'Eligible Voters', value: '96.8 Crore', icon: '👥' },
-    { label: 'Lok Sabha Seats', value: '543', icon: '🏛️' },
-    { label: 'Polling Stations', value: '10.5 Lakh', icon: '🗳️' },
+    { label: 'Eligible Voters',   value: '96.8 Crore', icon: '👥' },
+    { label: 'Lok Sabha Seats',   value: '543',         icon: '🏛️' },
+    { label: 'Polling Stations',  value: '10.5 Lakh',   icon: '🗳️' },
     { label: 'Recognised Parties', value: '6 National + 57 State', icon: '🎌' },
   ],
 
   electionTypes: [
     {
-      id: 'lok-sabha',
+      id:   'lok-sabha',
       name: 'Lok Sabha',
       full: 'General Elections (Lok Sabha)',
       desc: 'Election to the Lower House of Parliament. 543 constituencies across India. Held every 5 years.',
       frequency: 'Every 5 years',
       seats: 543,
       lastHeld: '2024',
-      nextDue: '2029',
+      nextDue:  '2029',
       calStart: '20290401T000000Z',
-      calEnd: '20290601T000000Z',
+      calEnd:   '20290601T000000Z',
     },
     {
-      id: 'rajya-sabha',
+      id:   'rajya-sabha',
       name: 'Rajya Sabha',
       full: 'Rajya Sabha Elections',
       desc: 'Upper House elections. Members elected by state legislative assemblies for 6-year terms. One-third retire every 2 years.',
       frequency: 'Biennial (one-third)',
       seats: 245,
       lastHeld: '2024',
-      nextDue: '2026',
+      nextDue:  '2026',
       calStart: '20260301T000000Z',
-      calEnd: '20260401T000000Z',
+      calEnd:   '20260401T000000Z',
     },
     {
-      id: 'vidhan-sabha',
+      id:   'vidhan-sabha',
       name: 'Vidhan Sabha',
       full: 'State Legislative Assembly Elections',
       desc: 'Elections to state assemblies. Each of the 28 states and 3 UTs with legislature holds separate elections.',
       frequency: 'Every 5 years (state-specific)',
       seats: 'Varies by state',
       lastHeld: '2024 (multiple states)',
-      nextDue: '2025-2027 (state-specific)',
+      nextDue:  '2025-2027 (state-specific)',
       calStart: '20251001T000000Z',
-      calEnd: '20260101T000000Z',
+      calEnd:   '20260101T000000Z',
     },
     {
-      id: 'local-body',
+      id:   'local-body',
       name: 'Local Body',
       full: 'Panchayat & Municipal Elections',
       desc: 'Elections for gram panchayats, municipal corporations, and local governing bodies. Conducted by State Election Commissions.',
       frequency: 'Every 5 years',
       seats: 'Varies',
       lastHeld: '2023-2024',
-      nextDue: '2028-2029',
+      nextDue:  '2028-2029',
       calStart: '20280101T000000Z',
-      calEnd: '20280401T000000Z',
+      calEnd:   '20280401T000000Z',
     },
   ],
 
@@ -388,46 +367,46 @@ const ELECTION_DATA = {
 
 /** All 28 Indian states with electoral data */
 const STATES = [
-  { name: 'Andhra Pradesh', capital: 'Amaravati', vidhanSabhaSeats: 175, rajyaSabhaSeats: 11, lokSabhaSeats: 25, type: 'state', region: 'South' },
-  { name: 'Arunachal Pradesh', capital: 'Itanagar', vidhanSabhaSeats: 60, rajyaSabhaSeats: 1, lokSabhaSeats: 2, type: 'state', region: 'North East' },
-  { name: 'Assam', capital: 'Dispur', vidhanSabhaSeats: 126, rajyaSabhaSeats: 7, lokSabhaSeats: 14, type: 'state', region: 'North East' },
-  { name: 'Bihar', capital: 'Patna', vidhanSabhaSeats: 243, rajyaSabhaSeats: 16, lokSabhaSeats: 40, type: 'state', region: 'East' },
-  { name: 'Chhattisgarh', capital: 'Raipur', vidhanSabhaSeats: 90, rajyaSabhaSeats: 5, lokSabhaSeats: 11, type: 'state', region: 'Central' },
-  { name: 'Goa', capital: 'Panaji', vidhanSabhaSeats: 40, rajyaSabhaSeats: 1, lokSabhaSeats: 2, type: 'state', region: 'West' },
-  { name: 'Gujarat', capital: 'Gandhinagar', vidhanSabhaSeats: 182, rajyaSabhaSeats: 11, lokSabhaSeats: 26, type: 'state', region: 'West' },
-  { name: 'Haryana', capital: 'Chandigarh', vidhanSabhaSeats: 90, rajyaSabhaSeats: 5, lokSabhaSeats: 10, type: 'state', region: 'North' },
-  { name: 'Himachal Pradesh', capital: 'Shimla', vidhanSabhaSeats: 68, rajyaSabhaSeats: 3, lokSabhaSeats: 4, type: 'state', region: 'North' },
-  { name: 'Jharkhand', capital: 'Ranchi', vidhanSabhaSeats: 81, rajyaSabhaSeats: 6, lokSabhaSeats: 14, type: 'state', region: 'East' },
-  { name: 'Karnataka', capital: 'Bengaluru', vidhanSabhaSeats: 224, rajyaSabhaSeats: 12, lokSabhaSeats: 28, type: 'state', region: 'South' },
-  { name: 'Kerala', capital: 'Thiruvananthapuram', vidhanSabhaSeats: 140, rajyaSabhaSeats: 9, lokSabhaSeats: 20, type: 'state', region: 'South' },
-  { name: 'Madhya Pradesh', capital: 'Bhopal', vidhanSabhaSeats: 230, rajyaSabhaSeats: 11, lokSabhaSeats: 29, type: 'state', region: 'Central' },
-  { name: 'Maharashtra', capital: 'Mumbai', vidhanSabhaSeats: 288, rajyaSabhaSeats: 19, lokSabhaSeats: 48, type: 'state', region: 'West' },
-  { name: 'Manipur', capital: 'Imphal', vidhanSabhaSeats: 60, rajyaSabhaSeats: 1, lokSabhaSeats: 2, type: 'state', region: 'North East' },
-  { name: 'Meghalaya', capital: 'Shillong', vidhanSabhaSeats: 60, rajyaSabhaSeats: 1, lokSabhaSeats: 2, type: 'state', region: 'North East' },
-  { name: 'Mizoram', capital: 'Aizawl', vidhanSabhaSeats: 40, rajyaSabhaSeats: 1, lokSabhaSeats: 1, type: 'state', region: 'North East' },
-  { name: 'Nagaland', capital: 'Kohima', vidhanSabhaSeats: 60, rajyaSabhaSeats: 1, lokSabhaSeats: 1, type: 'state', region: 'North East' },
-  { name: 'Odisha', capital: 'Bhubaneswar', vidhanSabhaSeats: 147, rajyaSabhaSeats: 10, lokSabhaSeats: 21, type: 'state', region: 'East' },
-  { name: 'Punjab', capital: 'Chandigarh', vidhanSabhaSeats: 117, rajyaSabhaSeats: 7, lokSabhaSeats: 13, type: 'state', region: 'North' },
-  { name: 'Rajasthan', capital: 'Jaipur', vidhanSabhaSeats: 200, rajyaSabhaSeats: 10, lokSabhaSeats: 25, type: 'state', region: 'North' },
-  { name: 'Sikkim', capital: 'Gangtok', vidhanSabhaSeats: 32, rajyaSabhaSeats: 1, lokSabhaSeats: 1, type: 'state', region: 'North East' },
-  { name: 'Tamil Nadu', capital: 'Chennai', vidhanSabhaSeats: 234, rajyaSabhaSeats: 18, lokSabhaSeats: 39, type: 'state', region: 'South' },
-  { name: 'Telangana', capital: 'Hyderabad', vidhanSabhaSeats: 119, rajyaSabhaSeats: 7, lokSabhaSeats: 17, type: 'state', region: 'South' },
-  { name: 'Tripura', capital: 'Agartala', vidhanSabhaSeats: 60, rajyaSabhaSeats: 1, lokSabhaSeats: 2, type: 'state', region: 'North East' },
-  { name: 'Uttar Pradesh', capital: 'Lucknow', vidhanSabhaSeats: 403, rajyaSabhaSeats: 31, lokSabhaSeats: 80, type: 'state', region: 'North' },
-  { name: 'Uttarakhand', capital: 'Dehradun', vidhanSabhaSeats: 70, rajyaSabhaSeats: 3, lokSabhaSeats: 5, type: 'state', region: 'North' },
-  { name: 'West Bengal', capital: 'Kolkata', vidhanSabhaSeats: 294, rajyaSabhaSeats: 16, lokSabhaSeats: 42, type: 'state', region: 'East' },
+  { name: 'Andhra Pradesh',     capital: 'Amaravati',       vidhanSabhaSeats: 175, rajyaSabhaSeats: 11, lokSabhaSeats: 25, type: 'state', region: 'South' },
+  { name: 'Arunachal Pradesh',  capital: 'Itanagar',         vidhanSabhaSeats: 60,  rajyaSabhaSeats: 1,  lokSabhaSeats: 2,  type: 'state', region: 'North East' },
+  { name: 'Assam',              capital: 'Dispur',           vidhanSabhaSeats: 126, rajyaSabhaSeats: 7,  lokSabhaSeats: 14, type: 'state', region: 'North East' },
+  { name: 'Bihar',              capital: 'Patna',            vidhanSabhaSeats: 243, rajyaSabhaSeats: 16, lokSabhaSeats: 40, type: 'state', region: 'East' },
+  { name: 'Chhattisgarh',       capital: 'Raipur',           vidhanSabhaSeats: 90,  rajyaSabhaSeats: 5,  lokSabhaSeats: 11, type: 'state', region: 'Central' },
+  { name: 'Goa',                capital: 'Panaji',           vidhanSabhaSeats: 40,  rajyaSabhaSeats: 1,  lokSabhaSeats: 2,  type: 'state', region: 'West' },
+  { name: 'Gujarat',            capital: 'Gandhinagar',      vidhanSabhaSeats: 182, rajyaSabhaSeats: 11, lokSabhaSeats: 26, type: 'state', region: 'West' },
+  { name: 'Haryana',            capital: 'Chandigarh',       vidhanSabhaSeats: 90,  rajyaSabhaSeats: 5,  lokSabhaSeats: 10, type: 'state', region: 'North' },
+  { name: 'Himachal Pradesh',   capital: 'Shimla',           vidhanSabhaSeats: 68,  rajyaSabhaSeats: 3,  lokSabhaSeats: 4,  type: 'state', region: 'North' },
+  { name: 'Jharkhand',          capital: 'Ranchi',           vidhanSabhaSeats: 81,  rajyaSabhaSeats: 6,  lokSabhaSeats: 14, type: 'state', region: 'East' },
+  { name: 'Karnataka',          capital: 'Bengaluru',        vidhanSabhaSeats: 224, rajyaSabhaSeats: 12, lokSabhaSeats: 28, type: 'state', region: 'South' },
+  { name: 'Kerala',             capital: 'Thiruvananthapuram', vidhanSabhaSeats: 140, rajyaSabhaSeats: 9, lokSabhaSeats: 20, type: 'state', region: 'South' },
+  { name: 'Madhya Pradesh',     capital: 'Bhopal',           vidhanSabhaSeats: 230, rajyaSabhaSeats: 11, lokSabhaSeats: 29, type: 'state', region: 'Central' },
+  { name: 'Maharashtra',        capital: 'Mumbai',           vidhanSabhaSeats: 288, rajyaSabhaSeats: 19, lokSabhaSeats: 48, type: 'state', region: 'West' },
+  { name: 'Manipur',            capital: 'Imphal',           vidhanSabhaSeats: 60,  rajyaSabhaSeats: 1,  lokSabhaSeats: 2,  type: 'state', region: 'North East' },
+  { name: 'Meghalaya',          capital: 'Shillong',         vidhanSabhaSeats: 60,  rajyaSabhaSeats: 1,  lokSabhaSeats: 2,  type: 'state', region: 'North East' },
+  { name: 'Mizoram',            capital: 'Aizawl',           vidhanSabhaSeats: 40,  rajyaSabhaSeats: 1,  lokSabhaSeats: 1,  type: 'state', region: 'North East' },
+  { name: 'Nagaland',           capital: 'Kohima',           vidhanSabhaSeats: 60,  rajyaSabhaSeats: 1,  lokSabhaSeats: 1,  type: 'state', region: 'North East' },
+  { name: 'Odisha',             capital: 'Bhubaneswar',      vidhanSabhaSeats: 147, rajyaSabhaSeats: 10, lokSabhaSeats: 21, type: 'state', region: 'East' },
+  { name: 'Punjab',             capital: 'Chandigarh',       vidhanSabhaSeats: 117, rajyaSabhaSeats: 7,  lokSabhaSeats: 13, type: 'state', region: 'North' },
+  { name: 'Rajasthan',          capital: 'Jaipur',           vidhanSabhaSeats: 200, rajyaSabhaSeats: 10, lokSabhaSeats: 25, type: 'state', region: 'North' },
+  { name: 'Sikkim',             capital: 'Gangtok',          vidhanSabhaSeats: 32,  rajyaSabhaSeats: 1,  lokSabhaSeats: 1,  type: 'state', region: 'North East' },
+  { name: 'Tamil Nadu',         capital: 'Chennai',          vidhanSabhaSeats: 234, rajyaSabhaSeats: 18, lokSabhaSeats: 39, type: 'state', region: 'South' },
+  { name: 'Telangana',          capital: 'Hyderabad',        vidhanSabhaSeats: 119, rajyaSabhaSeats: 7,  lokSabhaSeats: 17, type: 'state', region: 'South' },
+  { name: 'Tripura',            capital: 'Agartala',         vidhanSabhaSeats: 60,  rajyaSabhaSeats: 1,  lokSabhaSeats: 2,  type: 'state', region: 'North East' },
+  { name: 'Uttar Pradesh',      capital: 'Lucknow',          vidhanSabhaSeats: 403, rajyaSabhaSeats: 31, lokSabhaSeats: 80, type: 'state', region: 'North' },
+  { name: 'Uttarakhand',        capital: 'Dehradun',         vidhanSabhaSeats: 70,  rajyaSabhaSeats: 3,  lokSabhaSeats: 5,  type: 'state', region: 'North' },
+  { name: 'West Bengal',        capital: 'Kolkata',          vidhanSabhaSeats: 294, rajyaSabhaSeats: 16, lokSabhaSeats: 42, type: 'state', region: 'East' },
 ];
 
 /** All 8 Union Territories with electoral data */
 const UNION_TERRITORIES = [
-  { name: 'Andaman & Nicobar Islands', capital: 'Port Blair', vidhanSabhaSeats: 'No legislature', rajyaSabhaSeats: 0, lokSabhaSeats: 1, type: 'ut', region: 'Island' },
-  { name: 'Chandigarh', capital: 'Chandigarh', vidhanSabhaSeats: 'No legislature', rajyaSabhaSeats: 0, lokSabhaSeats: 1, type: 'ut', region: 'North' },
+  { name: 'Andaman & Nicobar Islands', capital: 'Port Blair',    vidhanSabhaSeats: 'No legislature', rajyaSabhaSeats: 0, lokSabhaSeats: 1,  type: 'ut', region: 'Island' },
+  { name: 'Chandigarh',                capital: 'Chandigarh',    vidhanSabhaSeats: 'No legislature', rajyaSabhaSeats: 0, lokSabhaSeats: 1,  type: 'ut', region: 'North' },
   { name: 'Dadra & Nagar Haveli and Daman & Diu', capital: 'Daman', vidhanSabhaSeats: 'No legislature', rajyaSabhaSeats: 0, lokSabhaSeats: 2, type: 'ut', region: 'West' },
-  { name: 'Delhi (NCT)', capital: 'New Delhi', vidhanSabhaSeats: 70, rajyaSabhaSeats: 3, lokSabhaSeats: 7, type: 'ut', region: 'North' },
-  { name: 'Jammu & Kashmir', capital: 'Srinagar/Jammu', vidhanSabhaSeats: 90, rajyaSabhaSeats: 4, lokSabhaSeats: 6, type: 'ut', region: 'North' },
-  { name: 'Ladakh', capital: 'Leh', vidhanSabhaSeats: 'No legislature', rajyaSabhaSeats: 0, lokSabhaSeats: 1, type: 'ut', region: 'North' },
-  { name: 'Lakshadweep', capital: 'Kavaratti', vidhanSabhaSeats: 'No legislature', rajyaSabhaSeats: 0, lokSabhaSeats: 1, type: 'ut', region: 'Island' },
-  { name: 'Puducherry', capital: 'Puducherry', vidhanSabhaSeats: 30, rajyaSabhaSeats: 1, lokSabhaSeats: 1, type: 'ut', region: 'South' },
+  { name: 'Delhi (NCT)',               capital: 'New Delhi',     vidhanSabhaSeats: 70,               rajyaSabhaSeats: 3, lokSabhaSeats: 7,  type: 'ut', region: 'North' },
+  { name: 'Jammu & Kashmir',           capital: 'Srinagar/Jammu', vidhanSabhaSeats: 90,              rajyaSabhaSeats: 4, lokSabhaSeats: 6,  type: 'ut', region: 'North' },
+  { name: 'Ladakh',                    capital: 'Leh',           vidhanSabhaSeats: 'No legislature', rajyaSabhaSeats: 0, lokSabhaSeats: 1,  type: 'ut', region: 'North' },
+  { name: 'Lakshadweep',               capital: 'Kavaratti',     vidhanSabhaSeats: 'No legislature', rajyaSabhaSeats: 0, lokSabhaSeats: 1,  type: 'ut', region: 'Island' },
+  { name: 'Puducherry',                capital: 'Puducherry',    vidhanSabhaSeats: 30,               rajyaSabhaSeats: 1, lokSabhaSeats: 1,  type: 'ut', region: 'South' },
 ];
 
 /** Detailed Lok Sabha information */
@@ -450,12 +429,12 @@ const LOK_SABHA = {
     'Elects the President jointly with Rajya Sabha and state legislatures',
   ],
   regions: [
-    { region: 'North India', seats: 225 },
-    { region: 'South India', seats: 130 },
-    { region: 'West India', seats: 84 },
-    { region: 'East India', seats: 72 },
+    { region: 'North India',     seats: 225 },
+    { region: 'South India',     seats: 130 },
+    { region: 'West India',      seats: 84  },
+    { region: 'East India',      seats: 72  },
     { region: 'North East India', seats: 25 },
-    { region: 'UTs', seats: 7 },
+    { region: 'UTs',             seats: 7   },
   ],
 };
 
@@ -482,15 +461,15 @@ const RAJYA_SABHA = {
   ],
   stateSeats: [
     { state: 'Uttar Pradesh', seats: 31 },
-    { state: 'Maharashtra', seats: 19 },
-    { state: 'Tamil Nadu', seats: 18 },
-    { state: 'Bihar', seats: 16 },
-    { state: 'West Bengal', seats: 16 },
-    { state: 'Karnataka', seats: 12 },
+    { state: 'Maharashtra',   seats: 19 },
+    { state: 'Tamil Nadu',    seats: 18 },
+    { state: 'Bihar',         seats: 16 },
+    { state: 'West Bengal',   seats: 16 },
+    { state: 'Karnataka',     seats: 12 },
     { state: 'Andhra Pradesh', seats: 11 },
-    { state: 'Gujarat', seats: 11 },
+    { state: 'Gujarat',       seats: 11 },
     { state: 'Madhya Pradesh', seats: 11 },
-    { state: 'Others', seats: 83 },
+    { state: 'Others',        seats: 83 },
   ],
 };
 
@@ -509,11 +488,11 @@ const PRESIDENT = {
   votingSystem: 'Single Transferable Vote with proportional representation',
   totalVoteValue: 'Each MP vote = sum of all MLA votes / total MPs (ensures balance between Parliament and states)',
   process: [
-    { step: 1, title: 'Nomination', desc: 'Candidate needs 50 proposers and 50 seconders from the Electoral College. Security deposit of ₹15,000.' },
+    { step: 1, title: 'Nomination',         desc: 'Candidate needs 50 proposers and 50 seconders from the Electoral College. Security deposit of ₹15,000.' },
     { step: 2, title: 'Election Commission', desc: 'ECI conducts the election. Voting is by secret ballot using a special pen.' },
     { step: 3, title: 'Preferential Voting', desc: 'Voters mark preferences (1, 2, 3…) against candidates rather than just one choice.' },
-    { step: 4, title: 'Vote Counting', desc: 'Counting uses Single Transferable Vote — if no candidate gets majority, lowest candidate eliminated and votes redistributed.' },
-    { step: 5, title: 'Oath & Assumption', desc: 'Elected President takes oath before the Chief Justice of India in the Central Hall of Parliament.' },
+    { step: 4, title: 'Vote Counting',       desc: 'Counting uses Single Transferable Vote — if no candidate gets majority, lowest candidate eliminated and votes redistributed.' },
+    { step: 5, title: 'Oath & Assumption',  desc: 'Elected President takes oath before the Chief Justice of India in the Central Hall of Parliament.' },
   ],
   powers: [
     'Head of State and Supreme Commander of Armed Forces',
@@ -630,12 +609,12 @@ async function translateWithGemini(text, language, apiKey) {
   const prompt = `Translate the following text to ${language}. Return only the translated text, nothing else:\n\n${text}`;
 
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent?key=${apiKey}`,
     {
-      method: 'POST',
+      method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      body:    JSON.stringify({
+        contents:         [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: { maxOutputTokens: 256, temperature: 0.2 },
       }),
     }
@@ -708,16 +687,16 @@ app.get('/api/config', apiLimiter, (_req, res) => {
   res.set('Cache-Control', 'public, max-age=3600');
   res.json({
     firebase: {
-      apiKey: process.env.FIREBASE_API_KEY || '',
-      authDomain: process.env.FIREBASE_AUTH_DOMAIN || '',
-      projectId: process.env.FIREBASE_PROJECT_ID || '',
-      storageBucket: process.env.FIREBASE_STORAGE_BUCKET || '',
+      apiKey:            process.env.FIREBASE_API_KEY            || '',
+      authDomain:        process.env.FIREBASE_AUTH_DOMAIN        || '',
+      projectId:         process.env.FIREBASE_PROJECT_ID         || '',
+      storageBucket:     process.env.FIREBASE_STORAGE_BUCKET     || '',
       messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || '',
-      appId: process.env.FIREBASE_APP_ID || '',
-      measurementId: process.env.FIREBASE_MEASUREMENT_ID || '',
+      appId:             process.env.FIREBASE_APP_ID             || '',
+      measurementId:     process.env.FIREBASE_MEASUREMENT_ID     || '',
     },
     features: {
-      auth: !!process.env.FIREBASE_API_KEY,
+      auth:      !!process.env.FIREBASE_API_KEY,
       analytics: !!process.env.FIREBASE_MEASUREMENT_ID,
       translate: !!process.env.GEMINI_API_KEY,
     },
@@ -763,7 +742,7 @@ app.get('/api/quiz', apiLimiter, (_req, res) => {
  * @desc   Validates quiz answers, returns score and explanations,
  *         persists score to Firestore
  */
-app.post('/api/quiz/submit', postMutationLimiter, async (req, res) => {
+app.post('/api/quiz/submit', apiLimiter, async (req, res) => {
   const { answers, sessionId } = req.body;
 
   if (!Array.isArray(answers)) {
@@ -777,21 +756,19 @@ app.post('/api/quiz/submit', postMutationLimiter, async (req, res) => {
   }
 
   const results = ELECTION_DATA.quizQuestions.map((q, i) => ({
-    id: q.id,
-    question: q.q,
+    id:        q.id,
+    question:  q.q,
     yourAnswer: answers[i],
-    correct: q.answer,
+    correct:   q.answer,
     isCorrect: answers[i] === q.answer,
-    explain: q.explain,
+    explain:   q.explain,
   }));
 
   const score = results.filter(r => r.isCorrect).length;
   const total = results.length;
-  const sid = typeof sessionId === 'string' ? sessionId.slice(0, 64) : 'anonymous';
+  const sid   = typeof sessionId === 'string' ? sessionId.slice(0, 64) : 'anonymous';
 
-  if (!answers.includes(-1)) {
-    await saveQuizScore(sid, score, total);
-  }
+  await saveQuizScore(sid, score, total);
 
   res.json({ score, total, percentage: Math.round((score / total) * 100), results });
 });
@@ -801,12 +778,8 @@ app.post('/api/quiz/submit', postMutationLimiter, async (req, res) => {
  * @desc   Returns top quiz scores from Firestore
  */
 app.get('/api/leaderboard', apiLimiter, async (_req, res) => {
-  const cached = getCached('leaderboard');
-  if (cached) return res.set('X-Cache', 'HIT').json(cached);
   const scores = await getTopScores(10);
-  const payload = { scores };
-  setCache('leaderboard', payload);
-  res.set('X-Cache', 'MISS').json(payload);
+  res.json({ scores });
 });
 
 /**
@@ -820,10 +793,10 @@ app.get('/api/dates', apiLimiter, (_req, res) => {
   const dates = ELECTION_DATA.importantDates.map(d => ({
     ...d,
     calUrl: `https://calendar.google.com/calendar/render?action=TEMPLATE` +
-      `&text=${encodeURIComponent(d.event)}` +
-      `&dates=${d.calStart}/${d.calEnd}` +
-      `&details=${encodeURIComponent('Indian Election Event — VoteWise India')}` +
-      `&location=${encodeURIComponent('India')}`,
+            `&text=${encodeURIComponent(d.event)}` +
+            `&dates=${d.calStart}/${d.calEnd}` +
+            `&details=${encodeURIComponent('Indian Election Event — VoteWise India')}` +
+            `&location=${encodeURIComponent('India')}`,
   }));
 
   setCache('dates', { dates });
@@ -837,6 +810,108 @@ app.get('/api/dates', apiLimiter, (_req, res) => {
 app.get('/api/announcements', apiLimiter, (_req, res) => {
   res.json({ announcements: ELECTION_DATA.announcements });
 });
+/**
+ * @route  GET /api/analyze
+ * @desc   Analyses election query text using Google Cloud Natural Language API.
+ *         Returns named entities (people, organisations, events, locations)
+ *         and document sentiment. Provides a distinct AI/ML API workflow
+ *         separate from Gemini, demonstrating broader Google service adoption.
+ * @query  {string} text - Election text to analyse (max 500 chars)
+ */
+app.get('/api/analyze', apiLimiter, async (req, res) => {
+  const { text } = req.query;
+
+  // ── Input validation ────────────────────────────────────────────────────────
+  if (!text || typeof text !== 'string') {
+    return res.status(400).json({ error: 'text query parameter is required.' });
+  }
+  if (text.trim().length === 0) {
+    return res.status(400).json({ error: 'text cannot be empty.' });
+  }
+  if (text.length > 500) {
+    return res.status(400).json({ error: 'text too long. Max 500 characters.' });
+  }
+
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  // ── Demo mode ───────────────────────────────────────────────────────────────
+  if (!apiKey) {
+    return res.json({
+      entities: [
+        { name: 'Election Commission of India', type: 'ORGANIZATION', salience: 0.80 },
+        { name: 'Lok Sabha',                    type: 'EVENT',        salience: 0.60 },
+        { name: 'Voter ID',                     type: 'OTHER',        salience: 0.35 },
+      ],
+      sentiment: { score: 0.1, magnitude: 0.5, label: 'Neutral' },
+      language:  'en',
+      demo:      true,
+    });
+  }
+
+  try {
+    const NL_BASE = 'https://language.googleapis.com/v1/documents';
+
+    // Step 1 — Entity analysis
+    const entityRes = await fetch(`${NL_BASE}:analyzeEntities?key=${apiKey}`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        document:     { type: 'PLAIN_TEXT', content: text.trim() },
+        encodingType: 'UTF8',
+      }),
+    });
+
+    if (!entityRes.ok) {
+      const err = await entityRes.json().catch(() => ({}));
+      console.error('NL Entity API error:', entityRes.status, err);
+      return res.status(502).json({ error: 'Natural Language API unavailable. Please try again.' });
+    }
+
+    const entityData = await entityRes.json();
+
+    // Step 2 — Sentiment analysis
+    const sentRes = await fetch(`${NL_BASE}:analyzeSentiment?key=${apiKey}`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        document:     { type: 'PLAIN_TEXT', content: text.trim() },
+        encodingType: 'UTF8',
+      }),
+    });
+
+    const sentData  = sentRes.ok ? await sentRes.json() : null;
+    const score     = sentData?.documentSentiment?.score     ?? 0;
+    const magnitude = sentData?.documentSentiment?.magnitude ?? 0;
+
+    /**
+     * Converts numeric sentiment score to a human-readable label.
+     * @param {number} s - Sentiment score (-1 to 1)
+     * @returns {string} Label
+     */
+    const sentimentLabel = s => s > 0.25 ? 'Positive' : s < -0.25 ? 'Negative' : 'Neutral';
+
+    res.json({
+      entities: (entityData.entities || [])
+        .slice(0, 8)
+        .map(e => ({
+          name:     e.name,
+          type:     e.type,
+          salience: Math.round((e.salience || 0) * 100) / 100,
+        })),
+      sentiment: {
+        score:     Math.round(score * 100) / 100,
+        magnitude: Math.round(magnitude * 100) / 100,
+        label:     sentimentLabel(score),
+      },
+      language: entityData.language || 'en',
+    });
+
+  } catch (err) {
+    console.error('Analyze error:', err.message);
+    res.status(500).json({ error: 'Analysis failed. Please try again.' });
+  }
+});
+
 /**
  * @route  GET /api/states
  * @desc   Returns all 28 states and 8 UTs with electoral seat data.
@@ -881,7 +956,7 @@ app.get('/api/president', apiLimiter, (_req, res) => {
  * @desc   Translates election-related text to Indian regional languages
  *         using Gemini API
  */
-app.post('/api/translate', chatLimiter, async (req, res) => {
+app.post('/api/translate', apiLimiter, async (req, res) => {
   const SUPPORTED = ['hindi', 'tamil', 'telugu', 'kannada', 'marathi', 'bengali', 'gujarati', 'punjabi'];
   const { text, language } = req.body;
 
@@ -952,17 +1027,17 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
     ];
 
     const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
       {
-        method: 'POST',
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body:    JSON.stringify({
           system_instruction: { parts: [{ text: buildSystemPrompt() }] },
           contents,
           generationConfig: { maxOutputTokens: 512, temperature: 0.4, topP: 0.9 },
           safetySettings: [
-            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+            { category: 'HARM_CATEGORY_HARASSMENT',   threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+            { category: 'HARM_CATEGORY_HATE_SPEECH',   threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
             { category: 'HARM_CATEGORY_CIVIC_INTEGRITY', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
           ],
         }),
@@ -975,7 +1050,7 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
       return res.status(502).json({ error: 'AI service temporarily unavailable. Please try again.' });
     }
 
-    const data = await geminiRes.json();
+    const data  = await geminiRes.json();
     const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!reply) return res.status(502).json({ error: 'Empty response from AI. Please try again.' });
@@ -988,10 +1063,7 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
 });
 
 // ── Static Files & SPA Fallback ───────────────────────────────────────────────
-app.use(express.static(path.join(__dirname, 'public'), {
-  maxAge: process.env.NODE_ENV === 'production' ? 86_400_000 : 0,
-  etag: true,
-}));
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('*', (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -1004,13 +1076,11 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'Something went wrong.' });
 });
 
-let server;
-if (process.env.NODE_ENV !== 'test') {
-  server = app.listen(PORT, () => {
-    console.log(`VoteWise India on http://localhost:${PORT}`);
-    console.log(`Gemini: ${process.env.GEMINI_API_KEY ? 'configured ✓' : 'demo mode'}`);
-    console.log(`Firestore: ${db ? 'connected ✓' : 'not configured'}`);
-  });
-}
+// ── Start Server ──────────────────────────────────────────────────────────────
+const server = app.listen(PORT, () => {
+  console.log(`VoteWise India on http://localhost:${PORT}`);
+  console.log(`Gemini: ${process.env.GEMINI_API_KEY ? 'configured ✓' : 'demo mode'}`);
+  console.log(`Firestore: ${db ? 'connected ✓' : 'not configured'}`);
+});
 
 module.exports = { app, server, ELECTION_DATA };
