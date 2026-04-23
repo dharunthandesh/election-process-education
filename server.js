@@ -30,11 +30,17 @@ try {
 const app = express();
 const PORT = process.env.PORT || 8080;
 
+// Cloud Run / load balancers: trust first proxy so client IP is correct for rate limits
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
 // ── Security & Middleware ─────────────────────────────────────────────────────
 
 app.use(compress());
 
 app.use(helmet({
+  hsts: process.env.NODE_ENV === 'production' ? { maxAge: 31_536_000, includeSubDomains: true } : false,
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
@@ -78,6 +84,16 @@ const chatLimiter = rateLimit({
 const apiLimiter = rateLimit({
   windowMs: 60_000, max: 100,
   message: { error: 'Too many requests.' },
+  skip: () => isTest,
+});
+
+/** Stricter limit for state-changing / expensive POSTs — 30 req/min per IP (quiz save) */
+const postMutationLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many submissions. Please wait a moment.' },
   skip: () => isTest,
 });
 
@@ -746,7 +762,7 @@ app.get('/api/quiz', apiLimiter, (_req, res) => {
  * @desc   Validates quiz answers, returns score and explanations,
  *         persists score to Firestore
  */
-app.post('/api/quiz/submit', apiLimiter, async (req, res) => {
+app.post('/api/quiz/submit', postMutationLimiter, async (req, res) => {
   const { answers, sessionId } = req.body;
 
   if (!Array.isArray(answers)) {
@@ -971,7 +987,10 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
 });
 
 // ── Static Files & SPA Fallback ───────────────────────────────────────────────
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  maxAge: process.env.NODE_ENV === 'production' ? 86_400_000 : 0,
+  etag: true,
+}));
 
 app.get('*', (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
