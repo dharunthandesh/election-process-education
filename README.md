@@ -10,7 +10,8 @@
 [![E2E](https://img.shields.io/badge/Playwright-30_passing-blue)](./e2e)
 [![PromptWars](https://img.shields.io/badge/PromptWars-Virtual_2026-orange)](https://promptwars.in)
 
-**🌐 Live demo:** [votewise-india-901504497544.asia-south1.run.app](https://votewise-india-901504497544.asia-south1.run.app/)
+**🌐 Live:** [votewise-india-901504497544.asia-south1.run.app](https://votewise-india-901504497544.asia-south1.run.app/)
+**Demo:** [Click Here](https://www.loom.com/share/af8625dfeb8844b0970327cf3bf32ab3)
 
 ---
 
