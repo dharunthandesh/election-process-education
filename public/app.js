@@ -7,12 +7,6 @@
 
 'use strict';
 
-/* ── Firebase Modular SDK Imports ────────────────────────── */
-import { initializeApp }                                          from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithRedirect,
-         getRedirectResult, signOut, onAuthStateChanged }         from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { getAnalytics, logEvent }                                 from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js';
-
 /* ── Utilities ──────────────────────────────────────────── */
 /**
  * Escapes HTML special characters to prevent XSS.
@@ -64,6 +58,12 @@ navBtns.forEach(btn => {
   });
 });
 
+/* ── Firebase Modular SDK Imports ────────────────────────── */
+import { initializeApp }                                         from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithRedirect,
+         getRedirectResult, signOut, onAuthStateChanged }        from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getAnalytics, logEvent }                                from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js';
+
 /* ── Firebase Init ───────────────────────────────────────── */
 let auth = null, analyticsInstance = null;
 
@@ -101,7 +101,7 @@ async function initFirebase() {
       }
     });
 
-    // Catch the result when user returns from Google redirect
+    // Catch result when user returns from Google redirect
     getRedirectResult(auth).then(result => {
       if (result && result.user) {
         console.log('Signed in via redirect:', result.user.displayName);
@@ -132,6 +132,42 @@ function handleAuth() {
       console.error('Auth redirect error:', e.code, e.message);
     });
   }
+}
+
+/**
+ * User-visible label for Google sign-in errors (see Firebase console if unclear).
+ * @param {object} e - Firebase error with optional `code` and `message`
+ * @returns {string}
+ */
+function authErrorButtonLabel(e) {
+  const code = e && e.code;
+  const hi = currentLang === 'hi';
+  if (code === 'auth/unauthorized-domain') {
+    return hi
+      ? 'यह डोमेन Firebase में जोड़ें'
+      : 'Add this site’s domain in Firebase (Auth → Settings → Authorized domains)';
+  }
+  if (code === 'auth/operation-not-allowed') {
+    return hi
+      ? 'Firebase में Google साइन-इन चालू करें'
+      : 'Enable Google in Firebase: Authentication → Sign-in method → Google';
+  }
+  if (code === 'auth/popup-blocked') {
+    return hi ? 'पॉप-अप अनुमति दें' : 'Allow pop-ups to sign in';
+  }
+  if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+    return hi ? 'साइन-इन रद्द' : 'Sign-in cancelled';
+  }
+  if (code === 'auth/network-request-failed') {
+    return hi ? 'नेटवर्क त्रुटि' : 'Network error — check connection';
+  }
+  if (code === 'auth/invalid-api-key' || (e.message && e.message.toLowerCase().includes('api key'))) {
+    return hi ? 'FIREBASE_API_KEY जांचें' : 'Invalid API key — check .env and redeploy';
+  }
+  if (code && String(code).startsWith('auth/')) {
+    return (hi ? 'त्रुटि: ' : 'Error: ') + code;
+  }
+  return hi ? 'साइन-इन विफल — F12 कंसोल देखें' : 'Sign-in failed — see browser console (F12)';
 }
 
 /* ── Load Election Data ──────────────────────────────────── */
@@ -290,6 +326,7 @@ async function initQuiz() {
     selectedAnswers = new Array(questions.length).fill(-1);
     quizLoaded = true;
     renderQuestion();
+
   } catch (e) {
     console.error('Quiz load error:', e);
     document.getElementById('quiz-container').innerHTML = '<div class="error-state">Failed to load quiz. Please refresh the page.</div>';
@@ -332,6 +369,7 @@ function renderQuestion() {
     </div>
   `;
 
+  // Attach click handlers using event delegation
   const optionsContainer = document.getElementById('quiz-options');
   if (optionsContainer) {
     optionsContainer.addEventListener('click', handleOptionClick);
@@ -347,13 +385,17 @@ function renderQuestion() {
 function handleOptionClick(e) {
   const button = e.target.closest('.quiz-option');
   if (!button) return;
+
   const index = parseInt(button.dataset.index, 10);
   if (isNaN(index)) return;
+
+
   selectAnswer(index);
 }
 
 function selectAnswer(idx) {
   selectedAnswers[currentQ] = idx;
+
   renderQuestion();
 }
 
@@ -592,6 +634,7 @@ async function doTranslate() {
   }
 }
 
+
 /* ── Parliament ──────────────────────────────────────────── */
 let parliamentLoaded = false;
 
@@ -794,10 +837,12 @@ function applyLang(lang) {
   const t = I18N[lang];
   document.documentElement.lang = lang === 'hi' ? 'hi' : 'en';
 
+  // Nav buttons
   document.querySelectorAll('.nav-btn').forEach((btn, i) => {
     if (t.nav[i]) btn.textContent = t.nav[i];
   });
 
+  // Hero
   const heroTag = document.querySelector('.hero-tag');
   if (heroTag) heroTag.textContent = t.heroTag;
   const heroH1 = document.querySelector('.hero h1');
@@ -805,12 +850,15 @@ function applyLang(lang) {
   const heroSub = document.querySelector('.hero-sub');
   if (heroSub) heroSub.textContent = t.heroSub;
 
+  // Auth button
   const authBtn = document.getElementById('auth-btn');
   if (authBtn && !(auth && auth.currentUser)) authBtn.textContent = t.signIn;
 
+  // Chat placeholder
   const chatIn = document.getElementById('chat-input');
   if (chatIn) chatIn.placeholder = t.chatPlaceholder;
 
+  // Section titles (h2.section-title inside each panel)
   const titleMap = {
     'panel-home': t.secTitle_home,
     'panel-how-to-vote': t.secTitle_vote,
@@ -834,13 +882,47 @@ function applyLang(lang) {
 }
 
 document.getElementById('lang-select').addEventListener('change', e => applyLang(e.target.value));
+
 document.getElementById('auth-btn').addEventListener('click', handleAuth);
+
 document.getElementById('translate-btn').addEventListener('click', doTranslate);
 
 document.querySelector('.filter-pills-group')?.addEventListener('click', e => {
   const btn = e.target.closest('.filter-pill');
   if (btn) filterStates(btn);
 });
+
+/* ── Natural Language Analysis (Google Cloud NL API) ────── */
+/**
+ * Sends election text to /api/analyze which calls
+ * Google Cloud Natural Language API for entity + sentiment analysis.
+ * This is a distinct AI/ML API separate from Gemini.
+ */
+async function doAnalyze() {
+  const text = document.getElementById('analyze-input')?.value?.trim();
+  const resultEl = document.getElementById('analyze-result');
+  if (!resultEl) return;
+  if (!text) { resultEl.textContent = 'Enter some election text to analyse.'; return; }
+
+  resultEl.textContent = 'Analysing with Google Natural Language API…';
+  try {
+    const res  = await fetch('/api/analyze?text=' + encodeURIComponent(text.slice(0, 500)));
+    const data = await res.json();
+    if (data.error) { resultEl.textContent = '⚠ ' + data.error; return; }
+
+    const entityLines = data.entities && data.entities.length
+      ? data.entities.map(e => escHtml(e.name) + ' (' + escHtml(e.type) + ')').join('\n')
+      : 'No named entities found';
+
+    resultEl.innerHTML =
+      '<strong style="color:var(--saffron)">Entities:</strong>\n' + entityLines +
+      '\n\n<strong style="color:var(--saffron)">Sentiment:</strong> ' +
+      escHtml(data.sentiment.label) + ' (' + data.sentiment.score.toFixed(2) + ')' +
+      (data.demo ? '\n<em style="color:var(--text-3)">[demo mode]</em>' : '');
+  } catch (e) {
+    resultEl.textContent = '⚠ Analysis failed. Please try again.';
+  }
+}
 
 /* ── Final Initialization ────────────────────────────────── */
 window.addEventListener('load', () => {
