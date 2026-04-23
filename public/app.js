@@ -67,7 +67,13 @@ async function initFirebase() {
     const data = await res.json();
     if (!data.firebase.apiKey) return;
 
-    if (!firebase.apps.length) firebase.initializeApp(data.firebase);
+    const f = data.firebase;
+    if (!f.authDomain || !f.projectId) {
+      console.warn('Firebase: set FIREBASE_AUTH_DOMAIN and FIREBASE_PROJECT_ID in server .env (Project settings in Firebase console).');
+      return;
+    }
+
+    if (!firebase.apps.length) firebase.initializeApp(f);
     auth = firebase.auth();
 
     if (data.features.analytics && data.firebase.measurementId) {
@@ -103,17 +109,50 @@ function handleAuth() {
   } else {
     const provider = new firebase.auth.GoogleAuthProvider();
     auth.signInWithPopup(provider).catch(e => {
-      console.error('Auth:', e);
+      console.error('Auth:', e.code, e.message);
       const btn = document.getElementById('auth-btn');
-      const msg = e.code === 'auth/unauthorized-domain'
-        ? 'Domain not authorised in Firebase'
-        : e.code === 'auth/popup-blocked'
-        ? 'Allow pop-ups to sign in'
-        : 'Sign-in failed — try again';
+      const msg = authErrorButtonLabel(e);
       btn.textContent = msg;
-      setTimeout(() => { btn.textContent = currentLang === 'hi' ? 'Google से साइन इन करें' : 'Sign in with Google'; }, 3000);
+      const ms = (msg && msg.length > 35) ? 5000 : 3500;
+      setTimeout(() => { btn.textContent = currentLang === 'hi' ? 'Google से साइन इन करें' : 'Sign in with Google'; }, ms);
     });
   }
+}
+
+/**
+ * User-visible label for Google sign-in errors (see Firebase console if unclear).
+ * @param {object} e - Firebase error with optional `code` and `message`
+ * @returns {string}
+ */
+function authErrorButtonLabel(e) {
+  const code = e && e.code;
+  const hi = currentLang === 'hi';
+  if (code === 'auth/unauthorized-domain') {
+    return hi
+      ? 'यह डोमेन Firebase में जोड़ें'
+      : 'Add this site’s domain in Firebase (Auth → Settings → Authorized domains)';
+  }
+  if (code === 'auth/operation-not-allowed') {
+    return hi
+      ? 'Firebase में Google साइन-इन चालू करें'
+      : 'Enable Google in Firebase: Authentication → Sign-in method → Google';
+  }
+  if (code === 'auth/popup-blocked') {
+    return hi ? 'पॉप-अप अनुमति दें' : 'Allow pop-ups to sign in';
+  }
+  if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+    return hi ? 'साइन-इन रद्द' : 'Sign-in cancelled';
+  }
+  if (code === 'auth/network-request-failed') {
+    return hi ? 'नेटवर्क त्रुटि' : 'Network error — check connection';
+  }
+  if (code === 'auth/invalid-api-key' || (e.message && e.message.toLowerCase().includes('api key'))) {
+    return hi ? 'FIREBASE_API_KEY जांचें' : 'Invalid API key — check .env and redeploy';
+  }
+  if (code && String(code).startsWith('auth/')) {
+    return (hi ? 'त्रुटि: ' : 'Error: ') + code;
+  }
+  return hi ? 'साइन-इन विफल — F12 कंसोल देखें' : 'Sign-in failed — see browser console (F12)';
 }
 
 /* ── Load Election Data ──────────────────────────────────── */
