@@ -58,6 +58,7 @@ app.use(helmet({
   },
 }));
 
+// Set ALLOWED_ORIGIN env var in production to restrict cross-origin access
 app.use(cors({ origin: process.env.ALLOWED_ORIGIN || '*', methods: ['GET', 'POST'] }));
 app.use(express.json({ limit: '10kb' }));
 

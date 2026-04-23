@@ -53,8 +53,8 @@ navBtns.forEach(btn => {
     if (target === 'how-to-vote' && !stepsLoaded) loadSteps();
     if (target === 'register' && !stepsLoaded) loadSteps();
 
-    // GA4 event
-    if (typeof gtag !== 'undefined') gtag('event', 'tab_view', { tab_name: target });
+    // GA4 event via Firebase Analytics
+    if (analytics) analytics.logEvent('tab_view', { tab_name: target });
   });
 });
 
@@ -261,7 +261,6 @@ const SESSION_ID = Math.random().toString(36).slice(2);
 
 async function initQuiz() {
   if (quizLoaded) {
-    console.log('Quiz already loaded, just rendering current state');
     renderQuestion();
     return;
   }
@@ -397,7 +396,7 @@ async function showResults() {
       </div>
     `;
 
-    if (typeof gtag !== 'undefined') gtag('event', 'quiz_complete', { score: pct });
+    if (analytics) analytics.logEvent('quiz_complete', { score: pct });
   } catch (e) {
     container.innerHTML = `
       <div class="quiz-result">
@@ -426,12 +425,12 @@ async function loadDates() {
     const data = await res.json();
     list.innerHTML = data.dates.map(d => `
       <div class="date-card" role="listitem">
-        <div class="date-dot ${d.type}" aria-hidden="true"></div>
+        <div class="date-dot ${escHtml(d.type)}" aria-hidden="true"></div>
         <div class="date-info">
           <div class="date-event">${escHtml(d.event)}</div>
           <div class="date-when">📅 ${escHtml(d.date)}</div>
         </div>
-        <a class="cal-btn" href="${d.calUrl}" target="_blank" rel="noopener noreferrer"
+        <a class="cal-btn" href="${escHtml(d.calUrl)}" target="_blank" rel="noopener noreferrer"
            aria-label="Add ${escHtml(d.event)} to Google Calendar">
           📆 <span>Add</span>
         </a>
@@ -452,7 +451,7 @@ async function loadAnnouncements() {
     const data = await res.json();
     const icons = { info: 'ℹ️', success: '✅', warning: '⚠️' };
     list.innerHTML = data.announcements.map(a => `
-      <div class="ann-item ${a.type}" role="listitem">
+      <div class="ann-item ${escHtml(a.type)}" role="listitem">
         <div class="ann-icon" aria-hidden="true">${icons[a.type] || 'ℹ️'}</div>
         <div>
           <div class="ann-text">${escHtml(a.text)}</div>
@@ -613,15 +612,15 @@ async function loadParliament() {
           <h3>🏛️ Rajya Sabha — ${rs.totalSeats} Seats</h3>
           <div class="parl-stat"><span class="label">Full Name</span><span class="value">${escHtml(rs.fullName)}</span></div>
           <div class="parl-stat"><span class="label">Term</span><span class="value">${escHtml(rs.term)}</span></div>
-          <div class="parl-stat"><span class="label">Elected Seats</span><span class="value">${rs.electedSeats}</span></div>
-          <div class="parl-stat"><span class="label">Nominated</span><span class="value">${rs.nominatedSeats} (expertise in art/science/literature)</span></div>
+          <div class="parl-stat"><span class="label">Elected Seats</span><span class="value">${escHtml(String(rs.electedSeats))}</span></div>
+          <div class="parl-stat"><span class="label">Nominated</span><span class="value">${escHtml(String(rs.nominatedSeats))} (expertise in art/science/literature)</span></div>
           <div class="parl-stat"><span class="label">Elected By</span><span class="value">${escHtml(rs.electedBy)}</span></div>
           <div class="parl-stat"><span class="label">Eligibility</span><span class="value">${escHtml(rs.eligibility)}</span></div>
           <div class="parl-stat"><span class="label">Chairman</span><span class="value">${escHtml(rs.chairman)}</span></div>
           <div class="parl-stat"><span class="label">Permanent?</span><span class="value">Yes — never dissolved</span></div>
           <div style="margin-top:0.75rem;">
             <div style="font-size:0.75rem;color:var(--text-3);margin-bottom:0.5rem;font-family:var(--font-m);">TOP STATE ALLOCATIONS</div>
-            ${rs.stateSeats.slice(0, 6).map(s => `<div class="parl-stat"><span class="label">${escHtml(s.state)}</span><span class="value">${s.seats} seats</span></div>`).join('')}
+            ${rs.stateSeats.slice(0, 6).map(s => `<div class="parl-stat"><span class="label">${escHtml(s.state)}</span><span class="value">${escHtml(String(s.seats))} seats</span></div>`).join('')}
           </div>
         </div>
       </div>
@@ -660,10 +659,10 @@ function renderStates(states) {
           <tr>
             <td>${escHtml(s.name)}</td>
             <td style="color:var(--text-2)">${escHtml(s.capital)}</td>
-            <td><span class="state-badge ${s.type === 'state' ? 'badge-state' : 'badge-ut'}">${s.type.toUpperCase()}</span></td>
+            <td><span class="state-badge ${s.type === 'state' ? 'badge-state' : 'badge-ut'}">${escHtml(s.type.toUpperCase())}</span></td>
             <td style="font-family:var(--font-m);font-size:0.78rem;color:var(--saffron)">${escHtml(String(s.vidhanSabhaSeats))}</td>
-            <td style="font-family:var(--font-m);font-size:0.78rem;color:var(--green)">${s.lokSabhaSeats}</td>
-            <td style="font-family:var(--font-m);font-size:0.78rem;color:var(--gold)">${s.rajyaSabhaSeats}</td>
+            <td style="font-family:var(--font-m);font-size:0.78rem;color:var(--green)">${escHtml(String(s.lokSabhaSeats))}</td>
+            <td style="font-family:var(--font-m);font-size:0.78rem;color:var(--gold)">${escHtml(String(s.rajyaSabhaSeats))}</td>
             <td style="color:var(--text-3);font-size:0.75rem">${escHtml(s.region)}</td>
           </tr>
         `).join('')}

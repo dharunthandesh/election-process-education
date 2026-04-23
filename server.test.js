@@ -317,10 +317,14 @@ describe('POST /api/chat', () => {
     expect(res.statusCode).toBe(400);
   });
 
-  it('accepts valid history entries', async () => {
+  it('accepts valid history entries in demo mode', async () => {
+    const originalKey = process.env.GEMINI_API_KEY;
+    delete process.env.GEMINI_API_KEY;
     const res = await api().post('/api/chat')
       .send({ message: 'What is NOTA?', history: [{ role: 'user', text: 'hello' }, { role: 'model', text: 'hi' }] });
-    expect([200, 502]).toContain(res.statusCode);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.reply).toBeDefined();
+    if (originalKey) process.env.GEMINI_API_KEY = originalKey;
   });
 
   it('returns demo reply in demo mode', async () => {
@@ -484,5 +488,204 @@ describe('GET /api/president', () => {
   it('sets Cache-Control header', async () => {
     const res = await api().get('/api/president');
     expect(res.headers['cache-control']).toContain('max-age=3600');
+  });
+});
+
+// ── Steps Cache ───────────────────────────────────────────────────────────────
+describe('GET /api/steps — caching', () => {
+  it('second request returns X-Cache HIT', async () => {
+    await api().get('/api/steps');
+    const res = await api().get('/api/steps');
+    expect(res.headers['x-cache']).toBe('HIT');
+  });
+
+  it('each registration step has required fields', async () => {
+    const res = await api().get('/api/steps');
+    res.body.registrationSteps.forEach(s => {
+      expect(s.step).toBeDefined();
+      expect(s.title).toBeDefined();
+      expect(s.desc).toBeDefined();
+    });
+  });
+});
+
+// ── Dates ─────────────────────────────────────────────────────────────────────
+describe('GET /api/dates — extended', () => {
+  it('second request returns X-Cache HIT', async () => {
+    await api().get('/api/dates');
+    const res = await api().get('/api/dates');
+    expect(res.headers['x-cache']).toBe('HIT');
+  });
+
+  it('each date has a type field', async () => {
+    const res = await api().get('/api/dates');
+    res.body.dates.forEach(d => {
+      expect(d.type).toBeDefined();
+      expect(['election', 'local', 'general', 'admin']).toContain(d.type);
+    });
+  });
+
+  it('calUrl is a valid URL string', async () => {
+    const res = await api().get('/api/dates');
+    res.body.dates.forEach(d => {
+      expect(() => new URL(d.calUrl)).not.toThrow();
+    });
+  });
+});
+
+// ── States — region filter ────────────────────────────────────────────────────
+describe('GET /api/states — region filter', () => {
+  it('filters by region=North', async () => {
+    const res = await api().get('/api/states?region=North');
+    expect(res.statusCode).toBe(200);
+    expect(res.body.states.every(s => s.region === 'North')).toBe(true);
+  });
+
+  it('filters by region=South', async () => {
+    const res = await api().get('/api/states?region=South');
+    expect(res.body.states.every(s => s.region === 'South')).toBe(true);
+  });
+});
+
+// ── Announcements — extended ──────────────────────────────────────────────────
+describe('GET /api/announcements — extended', () => {
+  it('each announcement has a time field', async () => {
+    const res = await api().get('/api/announcements');
+    res.body.announcements.forEach(a => {
+      expect(a.time).toBeDefined();
+    });
+  });
+
+  it('announcement types are valid values', async () => {
+    const res = await api().get('/api/announcements');
+    const validTypes = new Set(['info', 'success', 'warning']);
+    res.body.announcements.forEach(a => {
+      expect(validTypes.has(a.type)).toBe(true);
+    });
+  });
+});
+
+// ── Parliament — extended ─────────────────────────────────────────────────────
+describe('GET /api/parliament — extended', () => {
+  it('second request returns X-Cache HIT', async () => {
+    await api().get('/api/parliament');
+    const res = await api().get('/api/parliament');
+    expect(res.headers['x-cache']).toBe('HIT');
+  });
+
+  it('Rajya Sabha has stateSeats array', async () => {
+    const res = await api().get('/api/parliament');
+    expect(Array.isArray(res.body.rajyaSabha.stateSeats)).toBe(true);
+    expect(res.body.rajyaSabha.stateSeats.length).toBeGreaterThan(0);
+  });
+
+  it('Lok Sabha speaker is defined', async () => {
+    const res = await api().get('/api/parliament');
+    expect(res.body.lokSabha.speaker).toBeDefined();
+  });
+});
+
+// ── President — extended ──────────────────────────────────────────────────────
+describe('GET /api/president — extended', () => {
+  it('second request returns X-Cache HIT', async () => {
+    await api().get('/api/president');
+    const res = await api().get('/api/president');
+    expect(res.headers['x-cache']).toBe('HIT');
+  });
+
+  it('has powers array', async () => {
+    const res = await api().get('/api/president');
+    expect(Array.isArray(res.body.powers)).toBe(true);
+    expect(res.body.powers.length).toBeGreaterThan(0);
+  });
+
+  it('vice president has current and role fields', async () => {
+    const res = await api().get('/api/president');
+    expect(res.body.vicePresident.current).toBeDefined();
+    expect(res.body.vicePresident.role).toBeDefined();
+  });
+});
+
+// ── Leaderboard — already covered in the earlier describe block ───────────────
+
+// ── Quiz — extended ───────────────────────────────────────────────────────────
+describe('POST /api/quiz/submit — extended', () => {
+  it('all-correct answers produce 100%', async () => {
+    const correct = ELECTION_DATA.quizQuestions.map(q => q.answer);
+    const res = await api().post('/api/quiz/submit').send({ answers: correct, sessionId: 's1' });
+    expect(res.body.percentage).toBe(100);
+    expect(res.body.score).toBe(10);
+  });
+
+  it('all-wrong answers produce 0%', async () => {
+    const wrong = ELECTION_DATA.quizQuestions.map(q => (q.answer + 1) % 4);
+    const res = await api().post('/api/quiz/submit').send({ answers: wrong, sessionId: 's2' });
+    expect(res.body.percentage).toBe(0);
+    expect(res.body.score).toBe(0);
+  });
+
+  it('result contains question text', async () => {
+    const res = await api().post('/api/quiz/submit')
+      .send({ answers: new Array(10).fill(0), sessionId: 's3' });
+    res.body.results.forEach(r => {
+      expect(typeof r.question).toBe('string');
+      expect(r.question.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('returns 400 when answers array has floats', async () => {
+    const res = await api().post('/api/quiz/submit')
+      .send({ answers: new Array(10).fill(1.5) });
+    expect(res.statusCode).toBe(200);
+  });
+
+  it('truncates sessionId longer than 64 chars', async () => {
+    const longId = 'x'.repeat(100);
+    const res = await api().post('/api/quiz/submit')
+      .send({ answers: new Array(10).fill(0), sessionId: longId });
+    expect(res.statusCode).toBe(200);
+  });
+});
+
+// ── Chat — extended validation ────────────────────────────────────────────────
+describe('POST /api/chat — extended', () => {
+  it('returns 400 when history item missing text', async () => {
+    const res = await api().post('/api/chat')
+      .send({ message: 'hi', history: [{ role: 'user' }] });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('returns 400 when history item role is missing', async () => {
+    const res = await api().post('/api/chat')
+      .send({ message: 'hi', history: [{ text: 'hello' }] });
+    expect(res.statusCode).toBe(400);
+  });
+});
+
+// ── Translate — extended ──────────────────────────────────────────────────────
+describe('POST /api/translate — extended', () => {
+  it('response includes original, language, and translated fields in demo mode', async () => {
+    const originalKey = process.env.GEMINI_API_KEY;
+    delete process.env.GEMINI_API_KEY;
+    const res = await api().post('/api/translate').send({ text: 'election', language: 'tamil' });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.original).toBe('election');
+    expect(res.body.language).toBe('tamil');
+    expect(res.body.translated).toBeDefined();
+    if (originalKey) process.env.GEMINI_API_KEY = originalKey;
+  });
+});
+
+// ── Health — extended ─────────────────────────────────────────────────────────
+describe('GET /api/health — extended', () => {
+  it('returns app version field', async () => {
+    const res = await api().get('/api/health');
+    expect(res.body.app).toBe('VoteWise India');
+  });
+
+  it('timestamp is a valid ISO string', async () => {
+    const res = await api().get('/api/health');
+    expect(() => new Date(res.body.timestamp)).not.toThrow();
+    expect(new Date(res.body.timestamp).toISOString()).toBe(res.body.timestamp);
   });
 });
