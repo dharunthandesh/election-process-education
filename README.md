@@ -5,8 +5,9 @@
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green)](https://nodejs.org)
 [![Google Gemini](https://img.shields.io/badge/Google-Gemini_API-blue)](https://ai.google.dev)
 [![Cloud Run](https://img.shields.io/badge/Google-Cloud_Run-blue)](https://cloud.google.com/run)
-[![Tests](https://img.shields.io/badge/tests-66_passing-brightgreen)](./server.test.js)
-[![Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen)](./server.test.js)
+[![Tests](https://img.shields.io/badge/Jest-99_passing-brightgreen)](./server.test.js)
+[![Coverage](https://img.shields.io/badge/coverage-~93%25-brightgreen)](./server.test.js)
+[![E2E](https://img.shields.io/badge/Playwright-30_passing-blue)](./e2e/)
 [![PromptWars](https://img.shields.io/badge/PromptWars-Virtual_2026-orange)](https://promptwars.in)
 
 **🌐 Live demo:** [votewise-india-901504497544.asia-south1.run.app](https://votewise-india-901504497544.asia-south1.run.app/) &nbsp;•&nbsp; **🎥 Walkthrough:** _add Loom / YouTube link_
@@ -60,7 +61,9 @@ India has 96.8 crore eligible voters, many of them first-time voters, rural citi
 ┌────────────────────▼────────────────────────────────┐
 │           Express.js Backend (Node 18)               │
 │  helmet · compression · express-rate-limit · CORS    │
-│  In-memory cache (25 s TTL) · full JSDoc             │
+│  In-memory cache (~30 s TTL) · HSTS in production     │
+│  trust proxy (rate limits) · static cache (1d prod)   │
+│  full JSDoc on server                                 │
 │  12 routes: /api/{health, config, election, steps,   │
 │   quiz, quiz/submit, dates, chat, translate,         │
 │   leaderboard, announcements, parliament, states,    │
@@ -95,18 +98,18 @@ India has 96.8 crore eligible voters, many of them first-time voters, rural citi
 
 ---
 
-## Evaluation Mapping
+## Evaluation Mapping (rubric)
 
-How this submission addresses each evaluation axis:
+How this submission maps to typical review criteria:
 
-| Axis | Where to see it |
+| Criterion | Evidence in this repo |
 |---|---|
-| **Code Quality** | `server.js` is fully JSDoc-annotated with modular helpers and no inline secrets. **Modular frontend**: `index.html` (340 lines pure HTML), `app.js` (840 lines JS), `styles.css` (1750 lines CSS). Consistent patterns, structured routes, clear separation of cache / validation / handler layers. |
-| **Security** | `helmet` (CSP-ready headers), `cors` with origin allow-list env var, `express-rate-limit` on mutative routes, `.env` gitignored, server-side secret proxying (Gemini key never reaches browser), HTML escaping (`escHtml`) on every rendered string to prevent XSS, OAuth 2.0 via Firebase. |
-| **Efficiency** | 25 s in-memory response cache, gzip via `compression`, static asset caching, lazy panel rendering (quiz/parliament/states/etc. fetch only when opened), debounced animations, single-page architecture avoids redundant network. |
-| **Testing** | **66 Jest + Supertest API tests** covering every route, error path, cache header, rate limit, and edge case. **30 Playwright E2E browser tests** covering navigation, quiz flow, chat, and accessibility. Run with `npm test` (API) and `npm run test:e2e` (browser). |
-| **Accessibility** | Skip-to-content link, `aria-label` on every interactive element, `aria-live` regions for chat/quiz/translations, semantic HTML5 landmarks, WCAG 2.1 AA contrast, full keyboard nav, `prefers-reduced-motion` CSS media query disables every animation for users who need it. |
-| **Google Services** | 10 services integrated meaningfully (not just namedropped) — see table above. |
+| **Code quality** | `server.js` is JSDoc-annotated with typed helpers, clear route sections, and no inline secrets. Frontend is structured HTML + `app.js` + `styles.css` with shared patterns (`escHtml`, lazy panel loads). |
+| **Security** | `helmet` (CSP + **HSTS in production**), `cors` via `ALLOWED_ORIGIN`, **per-route rate limits** (stricter for AI + quiz submit), **trust proxy** for correct client IP behind Cloud Run, 10kb JSON cap, server-only Gemini key, `escHtml` for XSS, Firebase OAuth. |
+| **Efficiency** | In-memory API cache (~30s TTL), gzip, **1-day `Cache-Control` on static assets in production**, lazy fetches for panels, single bundle from `public/`. |
+| **Testing** | **99** Jest + Supertest API tests; **30** Playwright E2E tests (a11y, nav, quiz, chat). `npm test` and `npm run test:e2e` (run `npx playwright install` once). CI runs API tests on push (`.github/workflows/ci.yml`). |
+| **Accessibility** | `role="tablist"` + `aria-controls` linking each tab to its `tabpanel`, skip link, `aria-live` for chat/quiz/translate, landmarks, one `h1`, contrast and motion preferences in CSS. |
+| **Google services** | **10** services with concrete usage — table **Google Services Used** above. |
 
 ---
 
@@ -128,7 +131,7 @@ How this submission addresses each evaluation axis:
 ```
 VoteWiseIndia/
 ├── server.js           # Express backend (987 lines) — full JSDoc, modular
-├── server.test.js      # Jest + Supertest — 66 API tests
+├── server.test.js      # Jest + Supertest — 99 API tests
 ├── public/
 │   ├── index.html      # SPA markup (340 lines) — semantic, accessible
 │   ├── styles.css      # Design system & components (1750 lines)
@@ -160,10 +163,10 @@ cp .env.example .env
 npm start
 # → http://localhost:8080
 
-# Run API tests (66 tests)
+# Run API tests (99 tests)
 npm test
 
-# Run E2E browser tests (30 tests)
+# Run E2E browser tests (30 tests; install browsers first)
 npx playwright install   # first time only
 npm run test:e2e
 
@@ -199,6 +202,7 @@ Region `asia-south1` (Mumbai) keeps latency low for Indian users.
 
 ## Security Notes
 
+- **Dependency advisories:** Remaining `npm audit` reports are often in **transitive** Google Cloud / Firebase dependencies. Fix by upgrading `firebase-admin` when upstream releases patch your tree; avoid blind `npm audit fix --force` without full regression tests.
 - **Secrets never committed.** `.env` is listed in `.gitignore`; only `.env.example` is tracked.
 - **Gemini key is server-side only.** All AI calls are proxied through `/api/chat` and `/api/translate` — the browser never sees the key.
 - **Rate limiting.** All `POST` endpoints (`/api/chat`, `/api/translate`, `/api/quiz/submit`) are rate-limited via `express-rate-limit`.
