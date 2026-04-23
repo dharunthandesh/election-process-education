@@ -37,20 +37,20 @@
     </div>
   </header>
 
-  <nav role="navigation" aria-label="Main navigation">
-    <div class="nav-inner">
-      <button class="nav-btn active" data-panel="home" aria-selected="true" role="tab">🏠 Home</button>
-      <button class="nav-btn" data-panel="how-to-vote" aria-selected="false" role="tab">🗳️ How to Vote</button>
-      <button class="nav-btn" data-panel="register" aria-selected="false" role="tab">📋 Registration</button>
-      <button class="nav-btn" data-panel="quiz" aria-selected="false" role="tab">🎯 Quiz</button>
-      <button class="nav-btn" data-panel="map" aria-selected="false" role="tab">📍 ECI Map</button>
-      <button class="nav-btn" data-panel="chat" aria-selected="false" role="tab">🤖 AI Assistant</button>
-      <button class="nav-btn" data-panel="dates" aria-selected="false" role="tab">📅 Dates</button>
-      <button class="nav-btn" data-panel="parliament" aria-selected="false" role="tab">🏛️ Parliament</button>
-      <button class="nav-btn" data-panel="states" aria-selected="false" role="tab">🗺️ States &amp; UTs</button>
-      <button class="nav-btn" data-panel="president" aria-selected="false" role="tab">🇮🇳 President</button>
-      <button class="nav-btn" data-panel="translate" aria-selected="false" role="tab">🌐 Translate</button>
-      <button class="nav-btn" data-panel="updates" aria-selected="false" role="tab">📢 Updates</button>
+  <nav class="app-main-nav" role="navigation" aria-label="Main navigation">
+    <div class="nav-inner" role="tablist" aria-label="Application sections">
+      <button type="button" class="nav-btn active" data-panel="home" id="tab-home" aria-selected="true" role="tab" aria-controls="panel-home">🏠 Home</button>
+      <button type="button" class="nav-btn" data-panel="how-to-vote" id="tab-how-to-vote" aria-selected="false" role="tab" aria-controls="panel-how-to-vote">🗳️ How to Vote</button>
+      <button type="button" class="nav-btn" data-panel="register" id="tab-register" aria-selected="false" role="tab" aria-controls="panel-register">📋 Registration</button>
+      <button type="button" class="nav-btn" data-panel="quiz" id="tab-quiz" aria-selected="false" role="tab" aria-controls="panel-quiz">🎯 Quiz</button>
+      <button type="button" class="nav-btn" data-panel="map" id="tab-map" aria-selected="false" role="tab" aria-controls="panel-map">📍 ECI Map</button>
+      <button type="button" class="nav-btn" data-panel="chat" id="tab-chat" aria-selected="false" role="tab" aria-controls="panel-chat">🤖 AI Assistant</button>
+      <button type="button" class="nav-btn" data-panel="dates" id="tab-dates" aria-selected="false" role="tab" aria-controls="panel-dates">📅 Dates</button>
+      <button type="button" class="nav-btn" data-panel="parliament" id="tab-parliament" aria-selected="false" role="tab" aria-controls="panel-parliament">🏛️ Parliament</button>
+      <button type="button" class="nav-btn" data-panel="states" id="tab-states" aria-selected="false" role="tab" aria-controls="panel-states">🗺️ States &amp; UTs</button>
+      <button type="button" class="nav-btn" data-panel="president" id="tab-president" aria-selected="false" role="tab" aria-controls="panel-president">🇮🇳 President</button>
+      <button type="button" class="nav-btn" data-panel="translate" id="tab-translate" aria-selected="false" role="tab" aria-controls="panel-translate">🌐 Translate</button>
+      <button type="button" class="nav-btn" data-panel="updates" id="tab-updates" aria-selected="false" role="tab" aria-controls="panel-updates">📢 Updates</button>
     </div>
   </nav>
 
