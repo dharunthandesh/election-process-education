@@ -70,7 +70,12 @@ let auth = null, analyticsInstance = null;
 async function initFirebase() {
   try {
     const res = await fetch('/api/config');
-    const data = await res.json();
+    const _txt = await res.text();
+    if (!_txt.startsWith('{') && !_txt.startsWith('[')) {
+      console.error('Not JSON:', _txt.substring(0, 50));
+      return;
+    }
+    const data = JSON.parse(_txt);
     if (!data.firebase.apiKey) return;
 
     const f = data.firebase;
@@ -174,7 +179,12 @@ function authErrorButtonLabel(e) {
 async function loadHomeData() {
   try {
     const res = await fetch('/api/election');
-    const data = await res.json();
+    const _txt = await res.text();
+    if (!_txt.startsWith('{') && !_txt.startsWith('[')) {
+      console.error('Not JSON:', _txt.substring(0, 50));
+      return;
+    }
+    const data = JSON.parse(_txt);
 
     // Facts grid (reveal class + data-count for count-up animation)
     document.getElementById('facts-grid').innerHTML = data.keyFacts.map((f, i) => `
@@ -205,7 +215,12 @@ async function loadSteps() {
   if (stepsLoaded) return;
   try {
     const res = await fetch('/api/steps');
-    const data = await res.json();
+    const _txt = await res.text();
+    if (!_txt.startsWith('{') && !_txt.startsWith('[')) {
+      console.error('Not JSON:', _txt.substring(0, 50));
+      return;
+    }
+    const data = JSON.parse(_txt);
     stepsLoaded = true;
 
     document.getElementById('voting-steps').innerHTML = data.votingSteps.map(s => `
@@ -321,7 +336,12 @@ async function initQuiz() {
 
   try {
     const res = await fetch('/api/quiz');
-    const data = await res.json();
+    const _txt = await res.text();
+    if (!_txt.startsWith('{') && !_txt.startsWith('[')) {
+      console.error('Not JSON:', _txt.substring(0, 50));
+      return;
+    }
+    const data = JSON.parse(_txt);
     questions = data.questions;
     selectedAnswers = new Array(questions.length).fill(-1);
     quizLoaded = true;
@@ -419,7 +439,12 @@ async function showResults() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ answers: selectedAnswers, sessionId: SESSION_ID }),
     });
-    const data = await res.json();
+    const _txt = await res.text();
+    if (!_txt.startsWith('{') && !_txt.startsWith('[')) {
+      console.error('Not JSON:', _txt.substring(0, 50));
+      return;
+    }
+    const data = JSON.parse(_txt);
 
     const score = data.score;
     const total = data.total;
@@ -478,7 +503,12 @@ async function loadDates() {
   const list = document.getElementById('dates-list');
   try {
     const res = await fetch('/api/dates');
-    const data = await res.json();
+    const _txt = await res.text();
+    if (!_txt.startsWith('{') && !_txt.startsWith('[')) {
+      console.error('Not JSON:', _txt.substring(0, 50));
+      return;
+    }
+    const data = JSON.parse(_txt);
     list.innerHTML = data.dates.map(d => `
       <div class="date-card" role="listitem">
         <div class="date-dot ${escHtml(d.type)}" aria-hidden="true"></div>
@@ -504,7 +534,12 @@ async function loadAnnouncements() {
   const list = document.getElementById('ann-list');
   try {
     const res = await fetch('/api/announcements');
-    const data = await res.json();
+    const _txt = await res.text();
+    if (!_txt.startsWith('{') && !_txt.startsWith('[')) {
+      console.error('Not JSON:', _txt.substring(0, 50));
+      return;
+    }
+    const data = JSON.parse(_txt);
     const icons = { info: 'ℹ️', success: '✅', warning: '⚠️' };
     list.innerHTML = data.announcements.map(a => `
       <div class="ann-item ${escHtml(a.type)}" role="listitem">
@@ -570,7 +605,12 @@ async function sendMessage(text) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: trimmed, history: chatHistory }),
     });
-    const data = await res.json();
+    const _txt = await res.text();
+    if (!_txt.startsWith('{') && !_txt.startsWith('[')) {
+      console.error('Not JSON:', _txt.substring(0, 50));
+      return;
+    }
+    const data = JSON.parse(_txt);
     removeTyping();
 
     if (data.error) {
@@ -625,7 +665,12 @@ async function doTranslate() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text, language }),
     });
-    const data = await res.json();
+    const _txt = await res.text();
+    if (!_txt.startsWith('{') && !_txt.startsWith('[')) {
+      console.error('Not JSON:', _txt.substring(0, 50));
+      return;
+    }
+    const data = JSON.parse(_txt);
 
     if (data.error) {
       resultEl.textContent = '⚠️ ' + data.error;
@@ -652,7 +697,12 @@ async function loadParliament() {
   const el = document.getElementById('parliament-content');
   try {
     const res = await fetch('/api/parliament');
-    const data = await res.json();
+    const _txt = await res.text();
+    if (!_txt.startsWith('{') && !_txt.startsWith('[')) {
+      console.error('Not JSON:', _txt.substring(0, 50));
+      return;
+    }
+    const data = JSON.parse(_txt);
     const ls = data.lokSabha;
     const rs = data.rajyaSabha;
 
@@ -702,7 +752,12 @@ async function loadStates() {
   const el = document.getElementById('states-content');
   try {
     const res = await fetch('/api/states');
-    const data = await res.json();
+    const _txt = await res.text();
+    if (!_txt.startsWith('{') && !_txt.startsWith('[')) {
+      console.error('Not JSON:', _txt.substring(0, 50));
+      return;
+    }
+    const data = JSON.parse(_txt);
     allStates = data.states;
     renderStates(allStates);
   } catch (e) { el.innerHTML = '<div class="error-state">Failed to load states data.</div>'; }
@@ -757,7 +812,12 @@ async function loadPresident() {
   const el = document.getElementById('president-content');
   try {
     const res = await fetch('/api/president');
-    const p = await res.json();
+    const _txt = await res.text();
+    if (!_txt.startsWith('{') && !_txt.startsWith('[')) {
+      console.error('Not JSON:', _txt.substring(0, 50));
+      return;
+    }
+    const p = JSON.parse(_txt);
 
     el.innerHTML = `
       <div class="pres-grid">
@@ -915,7 +975,12 @@ async function doAnalyze() {
   resultEl.textContent = 'Analysing with Google Natural Language API…';
   try {
     const res  = await fetch('/api/analyze?text=' + encodeURIComponent(text.slice(0, 500)));
-    const data = await res.json();
+    const _txt = await res.text();
+    if (!_txt.startsWith('{') && !_txt.startsWith('[')) {
+      console.error('Not JSON:', _txt.substring(0, 50));
+      return;
+    }
+    const data = JSON.parse(_txt);
     if (data.error) { resultEl.textContent = '⚠ ' + data.error; return; }
 
     const entityLines = data.entities && data.entities.length
@@ -959,7 +1024,12 @@ async function doTextToSpeech() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text, language }),
     });
-    const data = await res.json();
+    const _txt = await res.text();
+    if (!_txt.startsWith('{') && !_txt.startsWith('[')) {
+      console.error('Not JSON:', _txt.substring(0, 50));
+      return;
+    }
+    const data = JSON.parse(_txt);
 
     if (data.error) {
       statusEl.textContent = '⚠ ' + data.error;
@@ -1019,7 +1089,12 @@ async function verifyVoterID() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ image: base64 }),
     });
-    const data = await res.json();
+    const _txt = await res.text();
+    if (!_txt.startsWith('{') && !_txt.startsWith('[')) {
+      console.error('Not JSON:', _txt.substring(0, 50));
+      return;
+    }
+    const data = JSON.parse(_txt);
 
     if (data.error) {
       resultEl.textContent = '⚠ ' + data.error;
