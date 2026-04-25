@@ -8,7 +8,8 @@
 'use strict';
 
 const request = require('supertest');
-const { app, ELECTION_DATA } = require('./server');
+const app = require('./server');
+const ELECTION_DATA = app.ELECTION_DATA;
 
 /** Supertest agent bound to Express app — no explicit server needed */
 const api = () => request(app);

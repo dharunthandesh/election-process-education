@@ -1612,4 +1612,6 @@ if (require.main === module) {
   });
 }
 
-module.exports = { app, server, ELECTION_DATA };
+module.exports = app;
+module.exports.server = server;
+module.exports.ELECTION_DATA = ELECTION_DATA;
