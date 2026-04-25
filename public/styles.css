@@ -1,13 +1,13 @@
 /**
  * @file styles.css
- * @description VoteWise India — Design System & Component Styles
+ * @description VoTeRight — Design System & Component Styles
  * Design tokens (CSS custom properties), layout, and all UI components.
  */
 
 :root {
-  --saffron: #FF6B00;
-  --saffron-lt: rgba(255, 107, 0, 0.12);
-  --saffron-glow: 0 0 32px rgba(255, 107, 0, 0.2);
+  --saffron: #138808;
+  --saffron-lt: rgba(19, 136, 8, 0.12);
+  --saffron-glow: 0 0 32px rgba(19, 136, 8, 0.2);
   --white: #FDFAF6;
   --green: #138808;
   --green-lt: rgba(19, 136, 8, 0.12);
@@ -73,7 +73,7 @@ body::before {
   position: fixed;
   inset: 0;
   background-image:
-    radial-gradient(circle at 20% 50%, rgba(255, 107, 0, 0.04) 0%, transparent 50%),
+    radial-gradient(circle at 20% 50%, rgba(19, 136, 8, 0.04) 0%, transparent 50%),
     radial-gradient(circle at 80% 20%, rgba(19, 136, 8, 0.04) 0%, transparent 50%),
     radial-gradient(circle at 50% 80%, rgba(0, 0, 128, 0.03) 0%, transparent 50%);
   pointer-events: none;
@@ -284,7 +284,7 @@ main {
   right: -60px;
   width: 280px;
   height: 280px;
-  background: radial-gradient(circle, rgba(255, 107, 0, 0.08), transparent 70%);
+  background: radial-gradient(circle, rgba(19, 136, 8, 0.08), transparent 70%);
   pointer-events: none;
 }
 
@@ -295,7 +295,7 @@ main {
   align-items: center;
   gap: 6px;
   background: var(--saffron-lt);
-  border: 1px solid rgba(255, 107, 0, 0.3);
+  border: 1px solid rgba(19, 136, 8, 0.3);
   border-radius: 999px;
   padding: 4px 12px;
   font-family: var(--font-m);
@@ -444,7 +444,7 @@ main {
   height: 48px;
   border-radius: 50%;
   background: var(--saffron-lt);
-  border: 2px solid rgba(255, 107, 0, 0.4);
+  border: 2px solid rgba(19, 136, 8, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -875,7 +875,7 @@ main {
 
 .msg.user .msg-bubble {
   background: var(--saffron-lt);
-  border: 1px solid rgba(255, 107, 0, 0.3);
+  border: 1px solid rgba(19, 136, 8, 0.3);
   border-bottom-right-radius: 4px;
 }
 
@@ -1316,11 +1316,11 @@ main {
 
   0%,
   100% {
-    box-shadow: 0 0 20px rgba(255, 107, 0, 0.2);
+    box-shadow: 0 0 20px rgba(19, 136, 8, 0.2);
   }
 
   50% {
-    box-shadow: 0 0 32px rgba(255, 107, 0, 0.5);
+    box-shadow: 0 0 32px rgba(19, 136, 8, 0.5);
   }
 }
 
@@ -1386,7 +1386,7 @@ main {
   height: 100%;
   background: linear-gradient(90deg,
       transparent,
-      rgba(255, 107, 0, 0.1),
+      rgba(19, 136, 8, 0.1),
       transparent);
   transition: left 0.6s ease;
   pointer-events: none;
@@ -1479,7 +1479,7 @@ main {
 }
 
 .btn-primary:hover {
-  box-shadow: 0 6px 20px rgba(255, 107, 0, 0.35);
+  box-shadow: 0 6px 20px rgba(19, 136, 8, 0.35);
 }
 
 /* ── Step card enhanced hover ──────────────────────────────── */
@@ -1492,7 +1492,7 @@ main {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255, 107, 0, 0.08), transparent 40%);
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(19, 136, 8, 0.08), transparent 40%);
   opacity: 0;
   transition: opacity 0.3s;
   pointer-events: none;
@@ -1684,7 +1684,7 @@ main {
 .badge-state {
   background: var(--saffron-lt);
   color: var(--saffron);
-  border: 1px solid rgba(255, 107, 0, 0.3);
+  border: 1px solid rgba(19, 136, 8, 0.3);
 }
 
 .badge-ut {
@@ -1715,7 +1715,7 @@ main {
 #send-btn:focus-visible {
   outline: 2px solid var(--saffron);
   outline-offset: 3px;
-  box-shadow: 0 0 0 4px rgba(255, 107, 0, 0.15);
+  box-shadow: 0 0 0 4px rgba(19, 136, 8, 0.15);
 }
 
 a:focus-visible {

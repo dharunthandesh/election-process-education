@@ -1,6 +1,6 @@
 /**
  * @file app.js
- * @description VoteWise India — Frontend Application Logic
+ * @description VoTeRight — Frontend Application Logic
  * Navigation, Firebase init, quiz engine, AI chat, translation,
  * state/parliament data renderers, and scroll-reveal animations.
  */
@@ -451,7 +451,7 @@ async function showResults() {
     const pct = data.percentage;
     const badge = pct >= 80 ? ['🏆 Election Expert!', '#FFD700', 'rgba(255,215,0,0.15)']
       : pct >= 60 ? ['👍 Good Knowledge!', '#138808', 'rgba(19,136,8,0.15)']
-        : ['📚 Keep Learning!', '#FF6B00', 'rgba(255,107,0,0.15)'];
+        : ['📚 Keep Learning!', '#138808', 'rgba(255,107,0,0.15)'];
 
     container.innerHTML = `
       <div class="quiz-result">

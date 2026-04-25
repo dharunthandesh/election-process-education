@@ -1,5 +1,5 @@
 /**
- * @fileoverview VoteWise India — Test Suite
+ * @fileoverview VoTeRight — Test Suite
  * @description Comprehensive tests for all API endpoints, validation,
  *   caching, security headers, and quiz logic.
  *   Run: NODE_ENV=test npx jest --coverage --forceExit
@@ -20,7 +20,7 @@ describe('GET /api/health', () => {
     const res = await api().get('/api/health');
     expect(res.statusCode).toBe(200);
     expect(res.body.status).toBe('ok');
-    expect(res.body.app).toBe('VoteWise India');
+    expect(res.body.app).toBe('VoTeRight');
     expect(res.body.timestamp).toBeDefined();
   });
 });
@@ -681,7 +681,7 @@ describe('POST /api/translate — extended', () => {
 describe('GET /api/health — extended', () => {
   it('returns app version field', async () => {
     const res = await api().get('/api/health');
-    expect(res.body.app).toBe('VoteWise India');
+    expect(res.body.app).toBe('VoTeRight');
   });
 
   it('timestamp is a valid ISO string', async () => {

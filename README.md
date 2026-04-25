@@ -1,4 +1,4 @@
-# VoteWise India 🗳️
+# VoTeRight 🗳️
 
 > **AI-powered Indian election education assistant** — Understand how to vote, register, and participate in India's democracy.
 
@@ -18,13 +18,13 @@
 
 ## Chosen Vertical
 
-**Election Process Education** — VoteWise India helps Indian citizens understand the complete election process: voter registration, how to vote on election day, types of elections, important dates, and their democratic rights — through an interactive AI assistant that works in English and Hindi.
+**Election Process Education** — VoTeRight helps Indian citizens understand the complete election process: voter registration, how to vote on election day, types of elections, important dates, and their democratic rights — through an interactive AI assistant that works in English and Hindi.
 
 ---
 
 ## Approach & Logic
 
-India has 96.8 crore eligible voters, many of them first-time voters, rural citizens, and non-English speakers. Existing ECI resources are exhaustive but scattered across dozens of PDFs and portals. VoteWise India consolidates that knowledge into a single, conversational, bilingual web app.
+India has 96.8 crore eligible voters, many of them first-time voters, rural citizens, and non-English speakers. Existing ECI resources are exhaustive but scattered across dozens of PDFs and portals. VoTeRight consolidates that knowledge into a single, conversational, bilingual web app.
 
 **Design philosophy:**
 
@@ -144,7 +144,7 @@ India has 96.8 crore eligible voters, many of them first-time voters, rural citi
 ## Project Structure
 
 ```
-VoteWiseIndia/
+VoTeRightIndia/
 ├── server.js              # Express backend (1600+ lines) — full JSDoc, 19 routes
 ├── server.test.js         # Jest + Supertest — 162 API tests (~91% coverage)
 ├── public/
@@ -170,8 +170,8 @@ VoteWiseIndia/
 ## How to Run Locally
 
 ```bash
-git clone https://github.com/SaiBhargavRallapalli/VoteWiseIndia.git
-cd VoteWiseIndia
+git clone https://github.com/SaiBhargavRallapalli/VoTeRightIndia.git
+cd VoTeRightIndia
 npm install
 cp .env.example .env
 # Edit .env — add GEMINI_API_KEY and Firebase config

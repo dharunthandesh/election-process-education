@@ -1,5 +1,5 @@
 /**
- * @fileoverview VoteWise India — Express backend server
+ * @fileoverview VoTeRight — Express backend server
  * @description AI-powered Indian election education assistant.
  *   Provides election data, Gemini-powered chat, quiz engine,
  *   Firebase Firestore persistence, multilingual support, and
@@ -676,7 +676,7 @@ function buildSystemPrompt() {
     .map(t => `  • ${t.name}: ${t.desc} (Next: ${t.nextDue})`)
     .join('\n');
 
-  return `You are VoteWise AI, an expert assistant on Indian elections and the democratic process.
+  return `You are VoTeRight AI, an expert assistant on Indian elections and the democratic process.
 
 MISSION: Help Indian citizens understand how elections work, how to vote, how to register, and their rights.
 
@@ -996,7 +996,7 @@ async function getTopScores(limit = 10) {
  * @desc   Health check for Cloud Run uptime monitoring
  */
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', app: 'VoteWise India', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', app: 'VoTeRight', timestamp: new Date().toISOString() });
 });
 
 /**
@@ -1136,7 +1136,7 @@ app.get('/api/dates', apiLimiter, (_req, res) => {
     calUrl: `https://calendar.google.com/calendar/render?action=TEMPLATE` +
             `&text=${encodeURIComponent(d.event)}` +
             `&dates=${d.calStart}/${d.calEnd}` +
-            `&details=${encodeURIComponent('Indian Election Event — VoteWise India')}` +
+            `&details=${encodeURIComponent('Indian Election Event — VoTeRight')}` +
             `&location=${encodeURIComponent('India')}`,
   }));
 
@@ -1547,7 +1547,7 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
 
   if (!apiKey) {
     return res.json({
-      reply: "👋 Namaste! I'm **VoteWise AI**, your Indian elections guide.\n\nI'm running in demo mode. Once configured with Gemini API, I can answer:\n• How do I register to vote?\n• What is NOTA?\n• How does the EVM work?\n• When are the next elections?\n\nContact: Voter Helpline **1950**",
+      reply: "👋 Namaste! I'm **VoTeRight AI**, your Indian elections guide.\n\nI'm running in demo mode. Once configured with Gemini API, I can answer:\n• How do I register to vote?\n• What is NOTA?\n• How does the EVM work?\n• When are the next elections?\n\nContact: Voter Helpline **1950**",
       demo: true,
     });
   }
@@ -1612,7 +1612,7 @@ app.use((err, _req, res, _next) => {
 let server;
 if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
   server = app.listen(PORT, () => {
-    console.log(`VoteWise India on http://localhost:${PORT}`);
+    console.log(`VoTeRight on http://localhost:${PORT}`);
     console.log(`Gemini: ${process.env.GEMINI_API_KEY ? 'configured ✓' : 'demo mode'}`);
     console.log(`Firestore: ${db ? 'connected ✓' : 'not configured'}`);
   });
