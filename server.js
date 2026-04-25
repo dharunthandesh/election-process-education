@@ -152,9 +152,13 @@ function requestLogger(req, res, next) {
 // ── Firebase Admin initialisation ────────────────────────────────────────────
 let db = null;
 try {
-  admin.initializeApp();
-  db = admin.firestore();
-  console.log('Firebase Firestore: connected');
+  if (process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.FIREBASE_PRIVATE_KEY) {
+    admin.initializeApp();
+    db = admin.firestore();
+    console.log('Firebase Firestore: connected');
+  } else {
+    console.warn('Firebase Firestore: missing GOOGLE_APPLICATION_CREDENTIALS or FIREBASE_PRIVATE_KEY, running without persistence');
+  }
 } catch (e) {
   console.warn('Firebase Firestore: running without persistence —', e.message);
 }
