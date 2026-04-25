@@ -10,7 +10,7 @@
     "test:e2e": "npx playwright test",
     "test:all": "npm test && npm run test:e2e"
   },
-  "engines": { "node": "18.x" },
+  "engines": { "node": "24.x" },
   "dependencies": {
     "compression": "^1.7.4",
     "cors": "^2.8.5",
