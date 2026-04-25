@@ -15,14 +15,20 @@
 
 'use strict';
 
-const express    = require('express');
-const cors       = require('cors');
-const helmet     = require('helmet');
-const compress   = require('compression');
-const rateLimit  = require('express-rate-limit');
-const path       = require('path');
-const admin      = require('firebase-admin');
-require('dotenv').config();
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import compress from 'compression';
+import rateLimit from 'express-rate-limit';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import admin from 'firebase-admin';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // ── Environment Validation ───────────────────────────────────────────────────
 /**
@@ -1604,7 +1610,7 @@ app.use((err, _req, res, _next) => {
 
 // ── Start Server ──────────────────────────────────────────────────────────────
 let server;
-if (require.main === module) {
+if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
   server = app.listen(PORT, () => {
     console.log(`VoteWise India on http://localhost:${PORT}`);
     console.log(`Gemini: ${process.env.GEMINI_API_KEY ? 'configured ✓' : 'demo mode'}`);
@@ -1612,6 +1618,5 @@ if (require.main === module) {
   });
 }
 
-module.exports = app;
-module.exports.server = server;
-module.exports.ELECTION_DATA = ELECTION_DATA;
+export default app;
+export { server, ELECTION_DATA };

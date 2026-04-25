@@ -7,9 +7,9 @@
 
 'use strict';
 
-const request = require('supertest');
-const app = require('./server');
-const ELECTION_DATA = app.ELECTION_DATA;
+import request from 'supertest';
+import { jest } from '@jest/globals';
+import app, { ELECTION_DATA } from './server.js';
 
 /** Supertest agent bound to Express app — no explicit server needed */
 const api = () => request(app);
